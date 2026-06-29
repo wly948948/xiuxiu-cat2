@@ -443,7 +443,7 @@
 
         <!-- 输入框 -->
         <div id="chat-input-area">
-            <input type="text" id="chat-input" placeholder="和咻咻猫说点什么..." onkeydown="if(event.key === 'Enter' || event.keyCode === 13) submitChat()">
+            <input class="input-glow" type="text" id="chat-input" placeholder="和咻咻猫说点什么..." onkeydown="if(event.key === 'Enter' || event.keyCode === 13) submitChat()">
             <button id="chat-submit" onclick="submitChat()">发送</button>
         </div>
     </div>
@@ -711,7 +711,8 @@
                         model: CONFIG.apiModel,
                         messages: messagesPayload,
                         max_tokens: 150,
-                        temperature: 0.6 
+                        temperature: 0.6, // 降低 temperature 以提高文本的稳定性和减少火星文
+                        top_p: 0.85       // 配合 top_p 过滤低概率词，显著优化语病与字词错误
                     }),
                     signal: controller.signal
                 });
@@ -848,7 +849,7 @@
             }
 
             if (t.includes("你好") || t.includes("嗨") || t.includes("在吗") || t.includes("hello") || t.includes("喂")) {
-                return "咻！你好啊。盯着咻咻的大方眼干嘛？没看过这么标准又聪明的10岁深巧克力色猫咪吗？";
+                return "咻！你好啊.盯着咻咻的大方眼干嘛？没看过这么标准又聪明的10岁深巧克力色猫咪吗？";
             }
             if (t.includes("可爱") || t.includes("漂亮") || t.includes("萌")) {
                 return "咻呜~ [有些别扭地转过身去，偷偷摇了摇巧克力色大尾巴] 哼，就算你拼命夸我可爱，我也不会把我的小鱼干分给小王一丁点的！";
