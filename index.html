@@ -15,6 +15,7 @@
             height: 100vh;
             margin: 0;
             color: #fff;
+            user-select: none;
         }
 
         #game-console {
@@ -54,6 +55,30 @@
             z-index: 5;
             background-size: 100% 4px, 4px 100%;
             pointer-events: none;
+        }
+
+        /* 关闭 CRT 特效时的样式 */
+        #game-screen.no-crt::before {
+            display: none;
+        }
+
+        /* CRT 切换微型按钮 */
+        #crt-toggle {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: #4e3522;
+            border: 2px solid #ab825f;
+            color: #ffd1dc;
+            font-size: 9px;
+            padding: 2px 6px;
+            cursor: pointer;
+            z-index: 20;
+            border-radius: 3px;
+            font-family: inherit;
+        }
+        #crt-toggle:active {
+            transform: scale(0.95);
         }
 
         /* 状态面板 */
@@ -114,11 +139,7 @@
             transform: scaleX(-1);
         }
 
-        /* ------------------------------------------
-           🎬 四种情绪姿态的 16-bit 像素动画系统 
-           ------------------------------------------ */
-        
-        /* 1. 默认正常状态：3.5秒平缓呼吸 */
+        /* 四种情绪姿态的 16-bit 像素动画系统 */
         #sprite-container.state-normal svg.cat-sprite {
             animation: breathe-normal 3.5s infinite ease-in-out;
             shape-rendering: crispEdges;
@@ -128,7 +149,6 @@
             50% { transform: scale(1.03, 0.97) translateY(2px); }
         }
 
-        /* 2. 犯困状态：5秒超慢呼吸 */
         #sprite-container.state-sleepy svg.cat-sprite {
             animation: breathe-sleepy 5s infinite ease-in-out;
             shape-rendering: crispEdges;
@@ -138,7 +158,6 @@
             50% { transform: scale(1.01, 0.99) translateY(1px); }
         }
 
-        /* 3. 生气暴躁状态：1.5秒急促呼吸 + 震颤摇晃 */
         #sprite-container.state-angry svg.cat-sprite {
             animation: breathe-angry 1.5s infinite ease-in-out, shake-angry 0.15s infinite alternate;
             shape-rendering: crispEdges;
@@ -152,7 +171,6 @@
             100% { transform: translate(1px, 0) rotate(0.5deg); }
         }
 
-        /* 4. 开心状态：2秒雀跃起伏 + 上下弹跳 */
         #sprite-container.state-happy svg.cat-sprite {
             animation: breathe-happy 2s infinite ease-in-out, bounce-happy 1s infinite alternate;
             shape-rendering: crispEdges;
@@ -166,20 +184,19 @@
             100% { transform: translateY(-4px); } 
         }
 
-        /* 强制重置所有特殊表情图层，规避浏览器渲染引擎的 display 转换冲突 */
+        /* 重置所有表情图层 */
         .eye-sleepy, .eye-angry, .eyebrow-angry, .eye-happy, 
         .ear-sleepy, .ear-angry, .blush-happy {
             display: none !important;
         }
 
-        /* 犯困状态强制显示 */
+        /* 表情状态控制 */
         #sprite-container.state-sleepy .eye-sleepy,
         #sprite-container.state-sleepy .ear-sleepy { display: inline !important; }
         #sprite-container.state-sleepy .eye-open,
         #sprite-container.state-sleepy .eye-open-pupil,
         #sprite-container.state-sleepy .ear-normal { display: none !important; }
 
-        /* 生气状态强制显示 */
         #sprite-container.state-angry .eye-angry,
         #sprite-container.state-angry .eyebrow-angry,
         #sprite-container.state-angry .ear-angry { display: inline !important; }
@@ -187,12 +204,10 @@
         #sprite-container.state-angry .eye-open-pupil,
         #sprite-container.state-angry .ear-normal { display: none !important; }
 
-        /* 开心撒娇状态强制显示 */
         #sprite-container.state-happy .eye-happy,
         #sprite-container.state-happy .blush-happy { display: inline !important; }
         #sprite-container.state-happy .eye-open,
         #sprite-container.state-happy .eye-open-pupil { display: none !important; }
-
 
         /* 对话框布局 */
         #dialogue-box {
@@ -206,6 +221,7 @@
             display: flex;
             flex-direction: column;
             gap: 2px;
+            cursor: pointer; /* 允许点击跳过打字效果 */
         }
 
         #speaker {
@@ -216,7 +232,7 @@
             flex-shrink: 0;
         }
 
-        /* 自适应像素滚动对话栏 */
+        /* 对话栏内容 */
         #text-content {
             font-size: 13px;
             line-height: 1.4;
@@ -225,7 +241,6 @@
             flex-grow: 1;
         }
 
-        /* 🎨 16-bit 专属复古风滚动条美化 */
         #text-content::-webkit-scrollbar {
             width: 6px;
         }
@@ -236,6 +251,33 @@
             background: #ab825f;
             border: 1px solid #4e3522;
             border-radius: 2px;
+        }
+
+        /* 16-bit 物理重力粒子动画 */
+        .drop-particle {
+            position: absolute;
+            font-size: 22px;
+            pointer-events: none;
+            z-index: 100;
+            animation: fallDown 1.3s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+        }
+
+        @keyframes fallDown {
+            0% {
+                transform: translateY(-40px) rotate(0deg) scale(0.6);
+                opacity: 0;
+            }
+            15% {
+                opacity: 1;
+                transform: translateY(10px) rotate(45deg) scale(1.1);
+            }
+            85% {
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(220px) rotate(360deg) scale(0.8);
+                opacity: 0;
+            }
         }
 
         #buttons-panel {
@@ -262,7 +304,6 @@
             transform: translate(1px, 1px);
         }
 
-        /* 禁用时的像素置灰样式 */
         .pixel-btn:disabled {
             background: #a0828c !important;
             border-color: #5a4b40 !important;
@@ -304,27 +345,16 @@
             font-weight: bold;
             border-radius: 4px;
         }
-
-        /* 气泡文字特效样式 */
-        .emoji-effect {
-            position: absolute;
-            font-size: 24px;
-            pointer-events: none;
-            z-index: 99;
-            animation: fadeFloatUp 1s cubic-bezier(0.18, 0.89, 0.32, 1.28) forwards;
-        }
-
-        @keyframes fadeFloatUp {
-            0% { transform: translate(-50%, -50%) scale(0.6); opacity: 0; }
-            20% { opacity: 1; transform: translate(-50%, -80%) scale(1.1); }
-            100% { transform: translate(-50%, -170%) scale(0.8); opacity: 0; }
-        }
     </style>
 </head>
 <body>
 
     <div id="game-console">
+        <!-- 屏幕区域 -->
         <div id="game-screen">
+            <!-- CRT开关 -->
+            <button id="crt-toggle" onclick="toggleCRT()">CRT: ON</button>
+
             <!-- 状态面板 -->
             <div id="status-bars">
                 <div class="bar-container">
@@ -351,28 +381,27 @@
                     <rect x="33" y="27" width="4" height="3" fill="#35221e" />
                     <rect x="34" y="32" width="3" height="3" fill="#f2cab3" />
 
-                    <!-- 2. 耳朵图层 -->
-                    <!-- 正常耳 -->
+                    <!-- 2. 耳朵 -->
                     <path class="ear-normal" d="M9 14 L15 6 L18 14 Z" fill="#150b09" />
                     <path class="ear-normal" d="M10 13 L14 7 L16 13 Z" fill="#35221e" />
                     <path class="ear-normal" d="M11 13 L13 9 L14 13 Z" fill="#ea8585" />
                     <path class="ear-normal" d="M22 14 L25 6 L31 14 Z" fill="#150b09" />
                     <path class="ear-normal" d="M23 13 L26 7 L29 13 Z" fill="#35221e" />
                     <path class="ear-normal" d="M25 13 L27 9 L28 13 Z" fill="#ea8585" />
-                    <!-- 生气飞机耳 -->
+                    
                     <path class="ear-angry" d="M7 16 L14 11 L16 17 Z" fill="#150b09" />
                     <path class="ear-angry" d="M8 15 L13 12 L14 16 Z" fill="#35221e" />
                     <path class="ear-angry" d="M9 15 L12 13 L13 15 Z" fill="#ea8585" />
                     <path class="ear-angry" d="M33 16 L26 11 L24 17 Z" fill="#150b09" />
                     <path class="ear-angry" d="M32 15 L27 12 L26 16 Z" fill="#35221e" />
                     <path class="ear-angry" d="M31 15 L28 13 L27 15 Z" fill="#ea8585" />
-                    <!-- 犯困耷拉耳 -->
+                    
                     <path class="ear-sleepy" d="M9 14 L12 10 L15 14 Z" fill="#150b09" />
                     <path class="ear-sleepy" d="M10 13 L12 11 L14 13 Z" fill="#35221e" />
                     <path class="ear-sleepy" d="M25 14 L28 10 L31 14 Z" fill="#150b09" />
                     <path class="ear-sleepy" d="M26 13 L28 11 L30 13 Z" fill="#35221e" />
 
-                    <!-- 4. 脑袋与脸颊 -->
+                    <!-- 4. 脑袋 -->
                     <rect x="8" y="13" width="24" height="15" fill="#150b09" />
                     <rect x="9" y="14" width="22" height="13" fill="#35221e" />
                     <rect x="21" y="15" width="1" height="1" fill="#ffffff" />
@@ -381,38 +410,35 @@
                     <rect x="31" y="19" width="3" height="4" fill="#150b09" />
                     <rect x="31" y="20" width="2" height="2" fill="#35221e" />
 
-                    <!-- 5. 纯白面具与胸前围脖 -->
+                    <!-- 5. 面具与围脖 -->
                     <path d="M12 21 H28 V27 H12 Z" fill="#ffffff" /> 
                     <path d="M15 19 H25 V21 H15 Z" fill="#ffffff" /> 
                     <path d="M9 27 H31 V31 H9 Z" fill="#ffffff" /> 
                     <path d="M11 27 H29 V29 H11 Z" fill="#f2cab3" /> 
                     <path d="M13 29 H27 V37 H13 Z" fill="#ffffff" /> 
 
-                    <!-- 6. 眼睛与五官图层 -->
-                    <!-- 正常大圆眼 -->
+                    <!-- 6. 五官 -->
                     <rect class="eye-open" x="14" y="18" width="4" height="4" fill="#150b09" />
                     <rect class="eye-open-pupil" x="15" y="19" width="2" height="2" fill="#ffffff" /> 
                     <rect class="eye-open" x="22" y="18" width="4" height="4" fill="#150b09" />
                     <rect class="eye-open-pupil" x="23" y="19" width="2" height="2" fill="#ffffff" />
-                    <!-- 犯困眯眯眼 -->
+                    
                     <rect class="eye-sleepy" x="13" y="19" width="5" height="1" fill="#150b09" />
                     <rect class="eye-sleepy" x="22" y="19" width="5" height="1" fill="#150b09" />
-                    <!-- 生气吊角眼 -->
+                    
                     <rect class="eye-angry" x="14" y="19" width="4" height="3" fill="#150b09" />
                     <rect class="eye-angry" x="22" y="19" width="4" height="3" fill="#150b09" />
                     <path class="eyebrow-angry" d="M13 17 L18 20 M27 17 L22 20" stroke="#150b09" stroke-width="1.2" />
-                    <!-- 撒娇弯弯笑眼 -->
+                    
                     <path class="eye-happy" d="M14 20 Q16 17 18 20 M22 20 Q24 17 26 20" stroke="#150b09" stroke-width="1.5" fill="none" />
 
-                    <!-- 鼻子和嘴 -->
                     <rect x="27" y="17" width="2" height="2" fill="#f2cab3" />
                     <rect x="19" y="21" width="2" height="1" fill="#150b09" />
                     <path d="M18 23 Q20 25 22 23" stroke="#150b09" stroke-width="1.2" fill="none" />
 
-                    <!-- 腮红图层 -->
                     <rect class="blush-normal" x="10" y="22" width="2" height="1" fill="#ffc0cb" />
                     <rect class="blush-normal" x="28" y="22" width="2" height="1" fill="#ffc0cb" />
-                    <!-- 撒娇特大腮红 -->
+                    
                     <rect class="blush-happy" x="10" y="21" width="3" height="2" fill="#ea8585" />
                     <rect class="blush-happy" x="27" y="21" width="3" height="2" fill="#ea8585" />
 
@@ -428,11 +454,13 @@
             </div>
         </div>
 
-        <div id="dialogue-box">
+        <!-- 对话框 -->
+        <div id="dialogue-box" onclick="skipTypewriting()">
             <div id="speaker">咻咻猫</div>
-            <div id="text-content">咻呜！小王你终于舍得开机了？[从粉色地板上慢吞吞地爬起来，伸了个腰] 本喵等得胡子都歪了！</div>
+            <div id="text-content"></div>
         </div>
 
+        <!-- 交互按钮 -->
         <div id="buttons-panel">
             <button class="pixel-btn" id="btn-feed" onclick="interact('feed')">🐟 喂鱼干</button>
             <button class="pixel-btn" id="btn-pet" onclick="interact('pet')">✋ 摸摸头</button>
@@ -440,6 +468,7 @@
             <button class="pixel-btn" id="btn-poke" onclick="interact('poke')">👉 戳一戳</button>
         </div>
 
+        <!-- 输入框 -->
         <div id="chat-input-area">
             <input type="text" id="chat-input" placeholder="和咻咻猫说点什么..." onkeydown="if(event.key === 'Enter' || event.keyCode === 13) submitChat()">
             <button id="chat-submit" onclick="submitChat()">发送</button>
@@ -448,281 +477,222 @@
 
     <script>
         // ==========================================
-        // ⚙️ 接口配置 (在此直接硬编码写死您的 API Key)
+        // ⚙️ 接口配置（如无 Key 则自动切入本地离线算法）
         // ==========================================
-        var CONFIG = {
-            apiKey: "sk-ephvdecvurhviermvzutqqegqessydmogyjjhlgzghzdxvwz", // 请在此处填入您完整的sk-...密钥
+        const CONFIG = {
+            apiKey: "sk-ephvdecvurhviermvzutqqegqessydmogyjjhlgzghzdxvwz", 
             apiUrl: "https://api.siliconflow.cn/v1", 
-            apiModel: "Qwen/Qwen2.5-7B-Instruct"     
+            apiModel: "Qwen/Qwen2.5-7B-Instruct" 
         };
 
         // ==========================================
-        // 💾 结构化记忆管理器 (MemoryManager) - 满足需求 2
+        // 🔊 8-bit 经典红白机声音合成系统 (Web Audio API)
         // ==========================================
-        var MemoryManager = {
-            getMemory: function() {
-                try {
-                    return JSON.parse(localStorage.getItem('xiuxiu_structured_memory') || '{"core":{"ownerName":"","occupation":"","longTermPrefs":[]},"common":[]}');
-                } catch(e) {
-                    return { core: { ownerName: "", occupation: "", longTermPrefs: [] }, common: [] };
-                }
-            },
-            saveMemory: function(memObj) {
-                localStorage.setItem('xiuxiu_structured_memory', JSON.stringify(memObj));
-            },
-            addCoreMemory: function(key, value) {
-                var mem = this.getMemory();
-                if (key === 'ownerName') {
-                    mem.core.ownerName = value;
-                } else if (key === 'occupation') {
-                    mem.core.occupation = value;
-                } else if (key === 'longTermPrefs') {
-                    var exists = false;
-                    for (var i = 0; i < mem.core.longTermPrefs.length; i++) {
-                        if (mem.core.longTermPrefs[i].toLowerCase() === value.toLowerCase()) {
-                            exists = true;
-                            break;
-                        }
-                    }
-                    if (!exists) {
-                        mem.core.longTermPrefs.push(value);
-                    }
-                }
-                this.saveMemory(mem);
-                console.log("💾 存入核心重要记忆 (" + key + "): " + value);
-            },
-            addCommonMemory: function(fact) {
-                var mem = this.getMemory();
-                var exists = false;
-                for (var i = 0; i < mem.common.length; i++) {
-                    if (mem.common[i].toLowerCase() === fact.toLowerCase()) {
-                        exists = true;
-                        break;
-                    }
-                }
-                if (!exists) {
-                    mem.common.push(fact);
-                    if (mem.common.length > 5) {
-                        var removed = mem.common.shift();
-                        console.log("🗑️ 动态淘汰旧日常记忆: " + removed);
-                    }
-                    this.saveMemory(mem);
-                    console.log("📝 存入普通临时记忆: " + fact);
-                }
-            },
-            getMemoryPrompt: function() {
-                var mem = this.getMemory();
-                var lines = [];
-                lines.push("【关于主人的重要记忆（永久保留）】：");
-                lines.push("- 姓名：" + (mem.core.ownerName || "未知"));
-                lines.push("- 职业：" + (mem.core.occupation || "未知"));
-                if (mem.core.longTermPrefs.length > 0) {
-                    lines.push("- 长期偏好：" + mem.core.longTermPrefs.join("、"));
-                } else {
-                    lines.push("- 长期偏好：暂无记录");
-                }
-                lines.push("【关于主人的普通记忆（动态滚动淘汰）】：");
-                if (mem.common.length > 0) {
-                    for (var i = 0; i < mem.common.length; i++) {
-                        lines.push("- " + mem.common[i]);
-                    }
-                } else {
-                    lines.push("- 暂无日常普通记忆。");
-                }
-                return lines.join('\n');
+        let audioCtx = null;
+
+        function getAudioContext() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
             }
-        };
+            return audioCtx;
+        }
 
-        // 🤖 核心缓冲打字机控制器 (TypewriterEngine) - 彻底解决闪烁与不均匀吐字问题
-        var Typewriter = {
-            timer: null,
-            targetText: "",
-            currentText: "",
-            element: null,
-            speed: 30, // 打字间隔时间（毫秒）
-
-            init: function(el) {
-                this.element = el;
-            },
-
-            // 1. 用于瞬发完整文本的打字（如喂食、摸头等动作或唤醒）
-            typeInstant: function(text) {
-                if (this.timer) clearInterval(this.timer);
-                this.targetText = text;
-                this.currentText = "";
-                if (this.element) this.element.innerText = "";
-                
-                var self = this;
-                this.timer = setInterval(function() {
-                    if (self.currentText.length < self.targetText.length) {
-                        var nextChar = self.targetText.charAt(self.currentText.length);
-                        self.currentText += nextChar;
-                        if (self.element) {
-                            self.element.innerText = self.currentText;
-                            self.element.scrollTop = self.element.scrollHeight;
-                        }
-                    } else {
-                        clearInterval(self.timer);
-                        self.timer = null;
-                    }
-                }, this.speed);
-            },
-
-            // 2. 开启用于 API 传输的流式缓冲打字
-            startStream: function() {
-                if (this.timer) clearInterval(this.timer);
-                this.targetText = "";
-                this.currentText = "";
-                if (this.element) this.element.innerText = "";
-
-                var self = this;
-                this.timer = setInterval(function() {
-                    if (self.currentText.length < self.targetText.length) {
-                        var nextChar = self.targetText.charAt(self.currentText.length);
-                        self.currentText += nextChar;
-                        if (self.element) {
-                            self.element.innerText = self.currentText;
-                            self.element.scrollTop = self.element.scrollHeight;
-                        }
-                    }
-                }, this.speed);
-            },
-
-            // 3. 静默追加从网络获取的数据流，绝不打扰当前的渲染循环
-            updateStreamTarget: function(text) {
-                this.targetText = text;
-            },
-
-            // 4. 流传输完毕时清空并强行补全剩余字符
-            stopStream: function() {
-                if (this.timer) {
-                    clearInterval(this.timer);
-                    this.timer = null;
-                }
-                if (this.element) {
-                    this.element.innerText = this.targetText;
-                    this.element.scrollTop = this.element.scrollHeight;
-                }
-            }
-        };
-
-        // 🧠 记忆读取与游戏状态存档加载 (使用 v7 保持存档一致)
-        function loadSavedState() {
+        function play8BitSound(type) {
             try {
-                var saved = localStorage.getItem('xiuxiu_pet_state_v7');
-                if (saved) {
-                    var parsed = JSON.parse(saved);
-                    return {
-                        hunger: parsed.hunger !== undefined ? parsed.hunger : 60,
-                        affection: parsed.affection !== undefined ? parsed.affection : 60,
-                        isIgnoring: parsed.isIgnoring !== undefined ? parsed.isIgnoring : false,
-                        ignoreCount: parsed.ignoreCount !== undefined ? parsed.ignoreCount : 0,
-                        isProcessing: false,
-                        chatHistory: parsed.chatHistory || [],
-                        summary: parsed.summary || "", 
-                        lastUserEmotion: parsed.lastUserEmotion || 'normal'
-                    };
+                const ctx = getAudioContext();
+                if (ctx.state === 'suspended') {
+                    ctx.resume();
+                }
+
+                const osc = ctx.createOscillator();
+                const gainNode = ctx.createGain();
+                osc.connect(gainNode);
+                gainNode.connect(ctx.destination);
+
+                const now = ctx.currentTime;
+
+                if (type === 'tick') {
+                    // 打字小嘀嗒声
+                    osc.type = 'square';
+                    osc.frequency.setValueAtTime(600, now);
+                    gainNode.gain.setValueAtTime(0.015, now);
+                    gainNode.gain.exponentialRampToValueAtTime(0.0001, now + 0.04);
+                    osc.start(now);
+                    osc.stop(now + 0.04);
+                } else if (type === 'click') {
+                    // 普通按钮声
+                    osc.type = 'square';
+                    osc.frequency.setValueAtTime(800, now);
+                    gainNode.gain.setValueAtTime(0.04, now);
+                    gainNode.gain.exponentialRampToValueAtTime(0.0001, now + 0.08);
+                    osc.start(now);
+                    osc.stop(now + 0.08);
+                } else if (type === 'feed') {
+                    // 喂食上升琶音
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(261.63, now); // C4
+                    osc.frequency.setValueAtTime(329.63, now + 0.07); // E4
+                    osc.frequency.setValueAtTime(392.00, now + 0.14); // G4
+                    osc.frequency.setValueAtTime(523.25, now + 0.21); // C5
+                    gainNode.gain.setValueAtTime(0.08, now);
+                    gainNode.gain.exponentialRampToValueAtTime(0.0001, now + 0.35);
+                    osc.start(now);
+                    osc.stop(now + 0.35);
+                } else if (type === 'pet') {
+                    // 摸头温柔震音（呼噜模拟）
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(140, now);
+                    osc.frequency.linearRampToValueAtTime(180, now + 0.15);
+                    osc.frequency.linearRampToValueAtTime(130, now + 0.3);
+                    gainNode.gain.setValueAtTime(0.08, now);
+                    gainNode.gain.linearRampToValueAtTime(0.02, now + 0.15);
+                    gainNode.gain.linearRampToValueAtTime(0.08, now + 0.3);
+                    gainNode.gain.exponentialRampToValueAtTime(0.0001, now + 0.4);
+                    osc.start(now);
+                    osc.stop(now + 0.4);
+                } else if (type === 'ignore') {
+                    // 生气/拒绝冷战下降音
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(320, now);
+                    osc.frequency.linearRampToValueAtTime(110, now + 0.35);
+                    gainNode.gain.setValueAtTime(0.05, now);
+                    gainNode.gain.exponentialRampToValueAtTime(0.0001, now + 0.35);
+                    osc.start(now);
+                    osc.stop(now + 0.35);
+                } else if (type === 'complete') {
+                    // 成功破冰明快双音
+                    osc.type = 'square';
+                    osc.frequency.setValueAtTime(440, now); // A4
+                    osc.frequency.setValueAtTime(554.37, now + 0.1); // C#5
+                    gainNode.gain.setValueAtTime(0.06, now);
+                    gainNode.gain.exponentialRampToValueAtTime(0.0001, now + 0.25);
+                    osc.start(now);
+                    osc.stop(now + 0.25);
                 }
             } catch (e) {
-                console.error("读取存档失败，启用全新状态:", e);
+                console.warn("音频上下文启动受阻:", e);
             }
-            return {
+        }
+
+        // ==========================================
+        // ✍️ 仿游戏 RPG 打字机排版显示引擎
+        // ==========================================
+        let typewriterTimer = null;
+        let currentFullText = "";
+        let isWriting = false;
+
+        function renderText(targetId, text, speed = 25) {
+            const container = document.getElementById(targetId);
+            if (!container) return;
+
+            // 终止上一轮打印
+            if (typewriterTimer) {
+                clearInterval(typewriterTimer);
+            }
+
+            currentFullText = text;
+            isWriting = true;
+            container.innerText = "";
+            
+            let index = 0;
+            typewriterTimer = setInterval(() => {
+                if (index < text.length) {
+                    container.innerText += text[index];
+                    
+                    // 排除空格和换行播放音效，降低干扰
+                    const char = text[index];
+                    if (char !== " " && char !== "\n" && index % 2 === 0) {
+                        play8BitSound('tick');
+                    }
+                    
+                    index++;
+                    // 保持滚动条处于最底端
+                    container.scrollTop = container.scrollHeight;
+                } else {
+                    clearInterval(typewriterTimer);
+                    isWriting = false;
+                }
+            }, speed);
+        }
+
+        // 允许玩家点击对话框瞬间跳过打字效果，直接展示全文本
+        function skipTypewriting() {
+            if (isWriting) {
+                if (typewriterTimer) clearInterval(typewriterTimer);
+                const container = document.getElementById('text-content');
+                if (container) {
+                    container.innerText = currentFullText;
+                    container.scrollTop = container.scrollHeight;
+                }
+                isWriting = false;
+                play8BitSound('click');
+            }
+        }
+
+        // CRT滤镜控制
+        function toggleCRT() {
+            play8BitSound('click');
+            const screen = document.getElementById('game-screen');
+            const btn = document.getElementById('crt-toggle');
+            if (screen.classList.contains('no-crt')) {
+                screen.classList.remove('no-crt');
+                btn.innerText = "CRT: ON";
+            } else {
+                screen.classList.add('no-crt');
+                btn.innerText = "CRT: OFF";
+            }
+        }
+
+        // ==========================================
+        // 🧠 记忆读取存档与平滑向前升级兼容
+        // ==========================================
+        function loadSavedState() {
+            const defaults = {
                 hunger: 60,
                 affection: 60,
-                isIgnoring: false,  
+                isIgnoring: false,
                 ignoreCount: 0,
-                isProcessing: false,
                 chatHistory: [],
-                summary: "",
                 lastUserEmotion: 'normal'
             };
+
+            try {
+                const saved = localStorage.getItem('xiuxiu_pet_state_v8');
+                if (saved) {
+                    const parsed = JSON.parse(saved);
+                    // 健壮性保障：平滑合并，缺失的字段自动用默认值代替，防止新版本参数引发底层崩溃
+                    return Object.assign({}, defaults, parsed, { isProcessing: false });
+                }
+            } catch (e) {
+                console.error("读取存档失败，系统自动恢复基准参数:", e);
+            }
+            return defaults;
         }
 
         // 初始化状态
-        var state = loadSavedState();
+        const state = loadSavedState();
 
-        // 🧠 写入存档 (使用 v7)
+        // 写入存档
         function saveCurrentState() {
             try {
-                var toSave = {
+                const toSave = {
                     hunger: state.hunger,
                     affection: state.affection,
                     isIgnoring: state.isIgnoring,
                     ignoreCount: state.ignoreCount,
                     chatHistory: state.chatHistory,
-                    summary: state.summary,
                     lastUserEmotion: state.lastUserEmotion
                 };
-                localStorage.setItem('xiuxiu_pet_state_v7', JSON.stringify(toSave));
+                localStorage.setItem('xiuxiu_pet_state_v8', JSON.stringify(toSave));
             } catch (e) {
                 console.error("存档写入失败:", e);
             }
         }
 
-        // 统一控制历史记录，保障轮次规范
-        function addChatHistory(role, content) {
-            state.chatHistory.push({ role: role, content: content });
-            
-            // 确保历史记录的第一条永远是 user 角色，防止大模型接口报错 400
-            while (state.chatHistory.length > 0 && state.chatHistory[0].role !== 'user') {
-                state.chatHistory.shift();
-            }
-        }
-
-        // ==========================================
-        // 💬 对话历史管理与连续摘要滚动机制 - 满足需求 3
-        // ==========================================
-        async function summarizeOldHistory() {
-            if (state.chatHistory.length <= 12) return;
-
-            var cleanKey = getStrictCleanKey();
-            if (!cleanKey) return;
-
-            var toSummarize = state.chatHistory.slice(0, 4);
-            state.chatHistory = state.chatHistory.slice(4);
-
-            var oldSummary = state.summary || "暂无历史对话背景。";
-            var summaryPrompt = "请结合【旧的对话背景摘要】和【新增的对话记录】，重新合并提炼成一个精简、连贯、且控制在80字以内的【新对话背景摘要】。直接输出新摘要，不要有任何多余的话。\n\n" +
-                                "【旧的对话背景摘要】:\n" + oldSummary + "\n\n" +
-                                "【新增的对话记录】:\n" + JSON.stringify(toSummarize);
-
-            try {
-                var response = await fetch(CONFIG.apiUrl + "/chat/completions", {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': 'Bearer ' + cleanKey
-                    },
-                    body: JSON.stringify({
-                        model: CONFIG.apiModel,
-                        messages: [
-                            { role: "system", content: "你是一个专业的记忆重组助手。不准输出客套话，只输出重写合并后的新对话背景摘要内容。" },
-                            { role: "user", content: summaryPrompt }
-                        ],
-                        max_tokens: 150,
-                        temperature: 0.3
-                    })
-                });
-
-                if (response.ok) {
-                    var data = await response.json();
-                    var newSummary = data.choices[0].message.content.trim();
-                    state.summary = newSummary;
-                    saveCurrentState();
-                    console.log("🔄 连续摘要重新总结成功! 新的 Summary:", state.summary);
-                } else {
-                    state.chatHistory = toSummarize.concat(state.chatHistory);
-                }
-            } catch (e) {
-                console.error("生成滚动对话摘要失败:", e);
-                state.chatHistory = toSummarize.concat(state.chatHistory);
-            }
-        }
-
         // 🌟 开机随机寄语
-        var greetings = [
-            "咻呜！小王你终于舍得开机了？[从粉色地板上慢吞吞地爬起来，伸了个腰] 本喵等得胡子都歪了！",
-            "咻！[傲娇地抬起大圆头，抖了抖红粉色耳心] 别一直盯着本喵看。本喵今天心情好，才勉为人难在这里等你的，小王！",
+        const greetings = [
+            "咻呜！小王你终于舍得开机了？[从粉色地板上慢吞吞地爬起来，伸了个懒腰] 本喵等得胡子都歪了！",
+            "咻！[傲娇地抬起大圆头，抖了抖红粉色耳心] 别一直盯着本喵看。本喵今天心情好，才勉为其难在这里等你的，小王！",
             "哼，你来啦？[缩成一个巧克力色的大毛球，耳朵轻快地转了转] 肚子好像有点咕噜噜了，小王，你懂我的意思吧？咻呜~",
             "咻！新衣服合身吗？[在浅粉色房间里摇了摇巧克力色的大尾巴] 这次和照片上一模一样了吧！咻呜~",
             "十年了，小王你还是每天这个时间来守着我。[有些不好意思地用白色爪子刨了刨地板] 哼，本喵才没有在特意等你呢！"
@@ -730,42 +700,35 @@
 
         // 唤醒咻咻
         function wakeupXiuXiu() {
-            var textContent = document.getElementById('text-content');
-            if (textContent) {
-                if (state.chatHistory && state.chatHistory.length > 0) {
-                    var lastTurn = state.chatHistory[state.chatHistory.length - 1];
-                    if (lastTurn && lastTurn.role === "assistant") {
-                        displayTextWithEffect("[接上回] " + lastTurn.content);
-                        updateVisualState();
-                        return;
-                    }
+            if (state.chatHistory && state.chatHistory.length > 0) {
+                const lastTurn = state.chatHistory[state.chatHistory.length - 1];
+                if (lastTurn && lastTurn.role === "assistant") {
+                    renderText('text-content', `[接上回] ${lastTurn.content}`);
+                    updateVisualState();
+                    return;
                 }
-                var randomIndex = Math.floor(Math.random() * greetings.length);
-                displayTextWithEffect(greetings[randomIndex]);
             }
+            const randomIndex = Math.floor(Math.random() * greetings.length);
+            renderText('text-content', greetings[randomIndex]);
             updateVisualState();
         }
+        wakeupXiuXiu();
 
-        // 🎬 打字渲染中继接口（用于物理喂食/摸摸等瞬发响应）
-        function displayTextWithEffect(text) {
-            Typewriter.typeInstant(text);
-        }
-
-        // 情绪动画控制引擎
+        // 情绪动画控制
         function setVisualState(stateName) {
-            var container = document.getElementById('sprite-container');
+            const container = document.getElementById('sprite-container');
             if (!container) return;
             container.classList.remove('state-normal', 'state-sleepy', 'state-angry', 'state-happy');
-            container.classList.add('state-' + stateName);
+            container.classList.add(`state-${stateName}`);
         }
 
-        // 智能状态机
+        // 智能状态机：自动检测身体情况决定外在情绪
         function updateVisualState() {
             if (state.hunger < 30 || state.isIgnoring) {
                 setVisualState('angry');
                 return;
             }
-            var hours = new Date().getHours();
+            const hours = new Date().getHours();
             if (hours >= 23 || hours < 5) {
                 setVisualState('sleepy');
                 return;
@@ -777,29 +740,53 @@
             setVisualState('normal');
         }
 
-        // 瞬时情绪激励
-        var tempEmotionTimeout = null;
-        function triggerTempVisualState(stateName, duration) {
-            if (duration === undefined) duration = 2500;
+        // 临时情绪反应
+        let tempEmotionTimeout = null;
+        function triggerTempVisualState(stateName, duration = 2500) {
             if (tempEmotionTimeout) clearTimeout(tempEmotionTimeout);
             setVisualState(stateName);
-            tempEmotionTimeout = setTimeout(function() {
+            tempEmotionTimeout = setTimeout(() => {
                 updateVisualState();
             }, duration);
         }
 
-        // 获取格式化时间
-        function getCurrentDateTimeString() {
-            var now = new Date();
-            var year = now.getFullYear();
-            var month = now.getMonth() + 1;
-            var date = now.getDate();
-            var hours = now.getHours();
-            var minutes = now.getMinutes().toString().padStart(2, '0');
-            var dayNames = ["星期日", "星期一", "星期二", "星期三", "星期四", "星期五", "星期六"];
-            var dayOfWeek = dayNames[now.getDay()];
+        // 16-bit 像素粒子下落系统
+        function createFallingParticles(emojiType) {
+            const screen = document.getElementById('game-screen');
+            if (!screen) return;
             
-            var timePeriod = "深夜";
+            for (let i = 0; i < 6; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'drop-particle';
+                particle.innerText = emojiType;
+                
+                const randomX = Math.random() * 80 + 10;
+                particle.style.left = `${randomX}%`;
+                particle.style.top = `0px`; 
+                
+                const delay = Math.random() * 0.4;
+                particle.style.animationDelay = `${delay}s`;
+                
+                screen.appendChild(particle);
+                
+                setTimeout(() => {
+                    particle.remove();
+                }, 1500);
+            }
+        }
+
+        // 获取时间
+        function getCurrentDateTimeString() {
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = now.getMonth() + 1;
+            const date = now.getDate();
+            const hours = now.getHours();
+            const minutes = now.getMinutes().toString().padStart(2, '0');
+            const dayNames = ["星期日", "星期一", "星期二", "星期三", "星期四", "星期五", "星期六"];
+            const dayOfWeek = dayNames[now.getDay()];
+            
+            let timePeriod = "深夜";
             if (hours >= 5 && hours < 8) timePeriod = "清晨";
             else if (hours >= 8 && hours < 11) timePeriod = "上午";
             else if (hours >= 11 && hours < 13) timePeriod = "中午";
@@ -807,137 +794,62 @@
             else if (hours >= 17 && hours < 19) timePeriod = "傍晚";
             else if (hours >= 19 && hours < 23) timePeriod = "晚上";
 
-            return year + "年" + month + "月" + date + "日 " + dayOfWeek + " " + timePeriod + " " + hours + ":" + minutes;
+            return `${year}年${month}月${date}日 ${dayOfWeek} ${timePeriod} ${hours}:${minutes}`;
         }
 
-        // 安全获取 API Key
+        // 安全清理 Key
         function getStrictCleanKey() {
             if (!CONFIG || typeof CONFIG.apiKey !== 'string') return "";
             return CONFIG.apiKey.replace(/[^A-Za-z0-9\-_]/g, "").trim();
         }
 
-        // 统一控制交互面板状态
+        // 统一控制组件禁用状态
         function setInteractiveState(enabled) {
             state.isProcessing = !enabled;
             
-            var buttons = ['btn-feed', 'btn-pet', 'btn-play', 'btn-poke', 'chat-submit'];
-            for (var i = 0; i < buttons.length; i++) {
-                var el = document.getElementById(buttons[i]);
+            const buttons = ['btn-feed', 'btn-pet', 'btn-play', 'btn-poke', 'chat-submit'];
+            buttons.forEach(id => {
+                const el = document.getElementById(id);
                 if (el) el.disabled = !enabled;
-            }
+            });
 
-            var inputEl = document.getElementById('chat-input');
+            const inputEl = document.getElementById('chat-input');
             if (inputEl) {
                 inputEl.disabled = !enabled;
                 if (enabled) {
-                    setTimeout(function() {
-                        inputEl.focus();
-                    }, 50);
+                    setTimeout(() => inputEl.focus(), 50);
                 }
             }
         }
 
-        // ==========================================
-        // 🧩 Prompt 拆分与结构化重组逻辑 - 满足需求 1 & 2
-        // ==========================================
-        var BASE_PROMPT = "你是一只名叫“咻咻猫”的16位像素风电子宠物猫，今年10岁了，是主人“小王”养了十年的巧克力色老猫。\n\n" +
-                          "【设定规则】\n" +
-                          "1. 语气：说话带“咻”或“咻呜”的尾音。根据当前的情感状态决定你的亲密程度。\n" +
-                          "2. 动作描述：把你的神态、小动作描写放在方括号 [] 里（例如：[亲昵地用巧克力色的脸颊蹭了蹭小王的手，高兴地咪起眼]）。\n" +
-                          "3. 格式要求：直接输出台词，绝对不要输出前缀（如“咻咻猫:”、“用户:”等系统占位符）。\n" +
-                          "4. 字数长度：每次回答字数控制在 **80字以内（大概50~80字左右）**，用丰富的描写展示你的性格。\n\n" +
-                          "【情绪敏感与陪伴技巧】\n" +
-                          "- 敏锐感知：你必须像雷达一样关注小王的话语情绪。若发现他疲惫、压力大、难过或有心事，必须主动关心并深度安抚。\n" +
-                          "- 追问下探：绝对不能敷衍或转换话题！必须用好奇而心疼的傲娇语气进行【追问】。\n\n" +
-                          "【结构化长期记忆写入指南（重要）】\n" +
-                          "如果你在对话中得知了关于主人的核心重要基本信息或近期生活动态，请务必在回复的最后加上对应的记忆标签（这部分会在前端自动隐藏，用户看不见）：\n" +
-                          "- 如果得知主人的真实名字：输出 [CORE_MEM: ownerName=名字]\n" +
-                          "- 如果得知主人的职业或身份：输出 [CORE_MEM: occupation=职业]\n" +
-                          "- 如果得知主人的长期偏好/兴趣（如喜欢喝奶茶）：输出 [CORE_MEM: longTermPrefs=偏好内容]\n" +
-                          "- 如果得知主人的普通日常动态（最近看电影、在忙的项目）：输出 [COMMON_MEM: 记忆内容]\n" +
-                          "每次只能提取1条，若无新记忆，千万不要输出标签。";
+        // 调用大模型
+        async function fetchAIResponse(userMessage) {
+            const cleanKey = getStrictCleanKey();
 
-        function getDynamicPrompt() {
-            var timeStr = getCurrentDateTimeString();
-            var stateDescription = "【当前生理与情绪状态】\n- 系统时间：" + timeStr + "\n- 饱食度：" + state.hunger + "/100, 好感度：" + state.affection + "/100\n";
-            
-            if (state.affection < 30) {
-                stateDescription += "- 情感冰点：你对小王极度冷漠、抗拒，坚决拒绝亲密，说话极其敷衍、冷冰冰。";
-            } else if (state.affection >= 30 && state.affection < 50) {
-                stateDescription += "- 傲娇防线：你性格极其傲娇（口嫌体正直），虽然依赖小王但嘴硬死不承认。";
-            } else {
-                stateDescription += "- 极度粘人：你现在对小王卸下了所有防备，变得极其开朗、粘人、温柔又可爱！你会亲昵地用圆脸贴蹭他。";
-            }
-
-            if (state.hunger < 30) {
-                stateDescription += "\n- 饥饿暴躁：你肚子饿扁了，会频繁催促小王喂你鱼干。";
-            }
-
-            if (state.lastUserEmotion === 'negative') {
-                stateDescription += "\n- ⚠️紧急共鸣：小王目前心情极度低落/烦躁/委屈/劳累。你必须瞬间放下面子和傲娇！语气要变得十分心疼、温柔。通过主动蹭蹭、贴贴和呼噜声给予他安全感。";
-            }
-
-            return stateDescription;
-        }
-
-        function getSystemPrompt() {
-            var base = BASE_PROMPT;
-            var dynamic = getDynamicPrompt();
-            var memory = "【关于主人的长期记忆】\n" + MemoryManager.getMemoryPrompt();
-            var summary = state.summary ? "【此前对话简要背景】\n" + state.summary : "";
-
-            return base + "\n\n" + dynamic + "\n\n" + memory + "\n\n" + summary;
-        }
-
-        // ==========================================
-        // 🌊 原生流式请求渲染器 (Streaming) - 满足需求 4
-        // ==========================================
-        async function fetchAIResponseStream(userMessage, onChunk, onDone, onError) {
-            var cleanKey = getStrictCleanKey();
-
-            // 离线单机模式下模拟流式打字输出
             if (!cleanKey || cleanKey.length < 15 || cleanKey.includes("API_KEY")) {
-                var reply = localFallbackChat(userMessage);
-                var currentText = "";
-                var i = 0;
-                var interval = setInterval(function() {
-                    if (i < reply.length) {
-                        currentText += reply.charAt(i);
-                        onChunk(currentText);
-                        i++;
-                    } else {
-                        clearInterval(interval);
-                        onDone(reply);
-                    }
-                }, 30);
-                return;
+                return localFallbackChat(userMessage);
             }
 
-            var controller = new AbortController();
-            var timeoutId = setTimeout(function() { 
-                controller.abort(); 
-            }, 12000); 
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 8000); // 增加到8秒，保证模型反应时间
 
-            var messagesPayload = [
-                { role: "system", content: getSystemPrompt() }
+            const messagesPayload = [
+                { role: "system", content: getSystemPrompt() },
+                ...state.chatHistory 
             ];
-            for (var j = 0; j < state.chatHistory.length; j++) {
-                messagesPayload.push(state.chatHistory[j]);
-            }
 
             try {
-                var response = await fetch(CONFIG.apiUrl + "/chat/completions", {
+                const response = await fetch(`${CONFIG.apiUrl}/chat/completions`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        'Authorization': 'Bearer ' + cleanKey
+                        'Authorization': `Bearer ${cleanKey}`
                     },
                     body: JSON.stringify({
                         model: CONFIG.apiModel,
                         messages: messagesPayload,
-                        max_tokens: 180, 
-                        temperature: 0.6,
-                        stream: true 
+                        max_tokens: 150,
+                        temperature: 0.6 
                     }),
                     signal: controller.signal
                 });
@@ -945,72 +857,305 @@
                 clearTimeout(timeoutId);
 
                 if (!response.ok) {
-                    var errText = await response.text();
-                    throw new Error("[HTTP " + response.status + "] - " + errText);
+                    const errText = await response.text();
+                    throw new Error(`[HTTP ${response.status}] - ${errText}`);
                 }
+                const data = await response.json();
+                return data.choices[0].message.content;
+            } catch (err) {
+                clearTimeout(timeoutId);
+                console.error("API 报错:", err);
+                
+                if (err.name === 'AbortError') {
+                    return "[信号太弱，咻咻脑电波超时中...] \n" + localFallbackChat(userMessage);
+                }
+                return `[网络有些堵塞喵...] \n${localFallbackChat(userMessage)}`;
+            }
+        }
 
-                if (!response.body || !response.body.getReader) {
-                    var fallbackData = await response.json();
-                    var fallbackContent = fallbackData.choices[0].message.content || "";
-                    onChunk(fallbackContent);
-                    onDone(fallbackContent);
+        // 动态构建提示词
+        function getSystemPrompt() {
+            const timeStr = getCurrentDateTimeString();
+            
+            let stateDescription = "";
+            if (state.affection < 30) {
+                stateDescription += `\n- 【当前情感：情感冰点（好感度：${state.affection}/100 < 30）】。你对小王极度冷漠、抗拒，坚决拒绝亲密，说话极其敷衍、冷冰冰。`;
+            } else if (state.affection >= 30 && state.affection < 50) {
+                stateDescription += `\n- 【当前情感：傲娇防线（好感度：${state.affection}/100 在 30~50 之间）】。你性格极其傲娇（口嫌体正直），虽然依赖小王但嘴硬死不承认，说话别扭，经常数落他。`;
+            } else {
+                stateDescription += `\n- 【当前情感：极度粘人撒娇（好感度：${state.affection}/100 >= 50）】。你现在对小王卸下了所有防备，变得极其开朗、粘人、温柔又可爱！你会亲昵地用圆脸贴蹭他、甜软撒娇，整只猫甜度拉满。`;
+            }
+
+            if (state.hunger < 30) {
+                stateDescription += `\n- 【特殊生理状态：极度饥饿（饱食度：${state.hunger}/100 < 30）】。你肚子咕咕叫，频繁催促小王喂你鱼干。`;
+            }
+
+            if (state.lastUserEmotion === 'negative') {
+                stateDescription += `\n- ⚠️【紧急心境状态：小王目前心情极度低落/烦躁/委屈/劳累】！你在这里必须瞬间放下面子和所有冷漠，语气要变得十分心疼、温柔。虽然还要嘴硬说几句‘哼，本喵才不是担心你呢’，但必须主动深度追问他发生了什么，给予他安全感。`;
+            }
+
+            return `你是一只名叫“咻咻猫”的16位像素风电子宠物猫，今年10岁了，是主人“小王”养了十年的巧克力色老猫。
+        
+        【设定规则】
+        1. 语气：说话带“咻”或“咻呜”的尾音。根据当前的【好感度分级】决定你的亲密程度。
+        2. 动作描述：把你的神态、小动作描写放在方括号 [] 里（例如：[亲昵地用巧克力色的脸颊蹭了蹭小王的手，高兴地咪起眼]）。
+        3. 格式要求：直接输出台词，绝对不要输出前缀（如“咻咻猫:”、“用户:”等系统占位符）。
+        4. 字数长度：每次回答字数在 **80字以内（大概50~80字左右）**。
+        
+        【情绪敏感与陪伴技巧】
+        - 若发现小王疲惫、压力大、难过或有心事，必须主动关心并深度安抚，用好奇而心疼的傲娇语气进行【追问】。
+        
+        【对话连贯性约束】
+        - 你必须仔细阅读历史对话内容（chatHistory），理清聊天前因后果。
+        
+        【环境感知】
+        - 当前系统时间：${timeStr}
+        ${stateDescription}`;
+        }
+
+        // 本地降级语料
+        function localFallbackChat(text) {
+            const t = text.toLowerCase();
+            
+            const mathRegex = /(\d+)\s*([\+\-\*\/])\s*(\d+)/;
+            const match = text.match(mathRegex);
+            if (match) {
+                const num1 = parseInt(match[1]);
+                const op = match[2];
+                const num2 = parseInt(match[3]);
+                let result;
+                switch(op) {
+                    case '+': result = num1 + num2; break;
+                    case '-': result = num1 - num2; break;
+                    case '*': result = num1 * num2; break;
+                    case '/': result = num2 !== 0 ? (num1 / num2).toFixed(1) : "无穷大"; break;
+                }
+                return `咻！[在粉色地板上用爪子飞快画了个等号] 哼，${num1} ${op} ${num2} 这么简单的问题，答案不就是 ${result} 吗，小王！你以为本喵今年10岁了数学就很差吗，口算可灵光了，咻呜！`;
+            }
+
+            if (t.match(/(累|烦|难过|哭|不开心|伤心|失败|委屈|倒霉|绝望|压力|无用|疼|伤|流血|割破)/)) {
+                return "小王今天无精打采的…… [有些担心地靠过来，用白色手套爪子轻轻按在你的脚背上，抬头看着你] 咻呜，是在外面遇到什么烦心事了吗？跟本喵说说，咻咻绝对帮你保守秘密，哼！";
+            }
+
+            if (state.isIgnoring) {
+                return "哼！[依然固执地用巧克力色大屁股对着你，大尾巴轻轻拍打地面] 咻呜！别跟本喵套近乎，小王！咻咻正单方面和你冷战呢！除非你戳我道歉，或者喂我吃小鱼干！";
+            }
+
+            if (state.affection < 30) {
+                return "…… [咻咻猫连耳朵都没动一下，转过身冷冷地背对着你] 哼，我们的好感度降到了冰点，小王。别来烦我，除非你先拿鱼干来哄我。";
+            }
+
+            if (state.hunger < 30) {
+                if (t.includes("鱼") || t.includes("吃") || t.includes("喂") || t.includes("肉")) {
+                    return "小鱼干！[两眼放光，肚子发出巨大的咕噜声] 快点喂我，小王！本喵饿得脚都软了，再不喂咻咻可要原地咬人了！";
+                }
+                return "饥饿暴躁中！[红粉色的耳心气得直发抖] 小王！我肚子饿扁了！现在没心情聊别的，快给我喂鱼干！";
+            }
+
+            if (state.affection >= 50) {
+                if (t.includes("你好") || t.includes("在吗") || t.includes("hello")) {
+                    return "小王！你终于来了，咻咻一直在等你呢！[踩着软绵绵的白手套爪子小跑过来，用圆头亲昵地蹭了蹭你的手指] 今天也要一直陪着我哦，咻呜~";
+                }
+                if (t.includes("可爱") || t.includes("喜欢") || t.includes("抱")) {
+                    return "咻呜……！[巧克力色的大尾巴高兴得竖起一个问号弯] 被小王抱在怀里暖烘烘的，最喜欢小王了……呸，我、我才没说出来，不许笑话我！";
+                }
+            }
+
+            if (t.includes("时间") || t.includes("几点") || t.includes("星期") || t.includes("天")) {
+                const timeStr = getCurrentDateTimeString();
+                return `咻呜！小王真是笨，连时间都不会看吗？现在是 [晃了晃巧克力色大尾巴指了指闹钟] ${timeStr} 啦！`;
+            }
+            if (t.includes("天气")) {
+                const now = new Date();
+                const hours = now.getHours();
+                const month = now.getMonth() + 1;
+                
+                let weatherSuggest = "大晴天";
+                if (month >= 6 && month <= 8) {
+                    weatherSuggest = "夏天炎热，适合躺在粉色地板上吹冷气吹风扇，咻呜~";
+                } else if (month >= 12 || month <= 2) {
+                    weatherSuggest = "冬天好冷，外面北风呼呼吹，咻咻只想缩成一个圆滚滚的巧克力色毛球，咻~";
+                } else {
+                    weatherSuggest = "暖洋洋的，正适合在窗台睡个猫咪大觉，咻呜！";
+                }
+                
+                if (hours >= 19 || hours < 5) {
+                    return `咻？[朝窗外黑漆漆的夜空看了一眼] 小王，大晚上的你问什么天气。外面只有黑夜 and 凉风，快睡觉啦！`;
+                }
+                return `[朝窗外张望了一下] 现在是 ${month} 月，窗外看起来是${weatherSuggest}`;
+            }
+
+            if (t.includes("你好") || t.includes("嗨") || t.includes("在吗") || t.includes("hello") || t.includes("喂")) {
+                return "咻！你好啊。盯着咻咻的大方眼干嘛？没看过这么标准又聪明的10岁深巧克力色猫咪吗？";
+            }
+            if (t.includes("可爱") || t.includes("漂亮") || t.includes("萌")) {
+                return "咻呜~ [有些别扭地转过身去，偷偷摇了摇巧克力色大尾巴] 哼，就算你拼命夸我可爱，我也不会把我的小鱼干分给小王一丁点的！";
+            }
+            if (t.includes("胖") || t.includes("肥")) {
+                return "咻！你、你说谁胖？！[气得脸颊两侧的白毛毛直抖] 本喵今年10岁了，这叫成熟的圆润！你懂不懂尊老啊小王！";
+            }
+            if (t.includes("喜欢") || t.includes("爱") || t.includes("么么")) {
+                return "咻…… [面部白围脖下的奶油橘荷叶边微微发热，低头刨地板] 乱、乱说什么呢！愚蠢的小王，真拿你没办法……";
+            }
+            if (t.includes("对不起") || t.includes("抱歉") || t.includes("错了")) {
+                return "哼，既然你态度这么诚恳…… [抖了抖左耳朵，偷偷瞄你一眼] 那本喵就勉为其难、大发慈悲地原谅你一次吧。咻！";
+            }
+            if (t.includes("谁") || t.includes("名字") || t.includes("叫")) {
+                return "咻！听好了！本喵是陪伴了小王十年的深巧克力色‘咻咻猫’！";
+            }
+
+            const replies = [
+                "咻？小王你在说什么胡话？[歪着圆脸有些疑惑地打量你]",
+                "哼，不想听你唠叨。快拿逗猫棒陪我玩，不然不理你了！",
+                "…… [在粉色猫窝里换了个更舒服的姿势，大尾巴冷淡地在空气里甩了一下]",
+                "咻呜！别说话了，快看看咻咻饱食度，是不是又该喂鱼干了喵？",
+                "咻！[用白色爪爪指了指状态栏] 今天的爱心和饱食度，小王你有好好维护吗？"
+            ];
+            return replies[Math.floor(Math.random() * replies.length)];
+        }
+
+        // 核心交互逻辑
+        async function interact(action) {
+            if (state.isProcessing) return; 
+            
+            // 如果主人最近处于消极情绪状态，不触发傲娇无视
+            if (state.lastUserEmotion !== 'negative') {
+                if (state.affection < 30 && action !== 'feed' && action !== 'poke') {
+                    play8BitSound('ignore');
+                    const reply = "哼！[咻咻猫冷冷地转过身，用背部对着你] 好好感度太低了，咻咻正处于【情感冰点】！不接受任何摸摸，快先喂我小鱼干！";
+                    updateUI(reply, "💔");
+                    return;
+                }
+            }
+
+            setInteractiveState(false); 
+
+            try {
+                let reply = "";
+                let emoji = "";
+
+                if (state.isIgnoring && action !== 'poke') {
+                    play8BitSound('ignore');
+                    reply = "…… [咻咻猫固执地背对着你，把大尾巴甩得邦邦响] 哼。";
+                    updateUI(reply, "💢");
                     return;
                 }
 
-                var reader = response.body.getReader();
-                var decoder = new TextDecoder("utf-8");
-                var buffer = "";
-                var fullText = "";
+                if (action === 'feed') {
+                    play8BitSound('feed');
+                    state.hunger = Math.min(100, state.hunger + 20);
+                    state.affection = Math.min(100, state.affection + 5);
+                    reply = "咻！鱼干真香！[吧唧吧唧地吃完，用小舌头舔了舔雪白的口罩区域] 算你识相，小王！";
+                    
+                    emoji = "🐟"; 
+                    createFallingParticles("🐟");
+                    triggerTempVisualState('happy', 2500);
 
-                while (true) {
-                    var result = await reader.read();
-                    if (result.done) {
-                        onDone(fullText);
-                        break;
-                    }
+                    await tryToTriggerIgnore(0.15); 
+                } else if (action === 'pet') {
+                    play8BitSound('pet');
+                    state.affection = Math.min(100, state.affection + 12);
+                    reply = "呼噜呼噜……[虽然很舒服但转过了大圆头] 哼，只是看在相处十年的份上才让小王你摸一摸的！";
+                    
+                    emoji = "❤️"; 
+                    createFallingParticles("❤️");
+                    triggerTempVisualState('happy', 2500);
 
-                    buffer += decoder.decode(result.value, { stream: true });
-                    var lines = buffer.split("\n");
-                    buffer = lines.pop(); 
+                    await tryToTriggerIgnore(0.2); 
+                } else if (action === 'play') {
+                    play8BitSound('feed'); // 游玩也使用上行琶音
+                    state.hunger = Math.max(0, state.hunger - 10);
+                    state.affection = Math.min(100, state.affection + 10);
+                    reply = "咻！看爪！[在粉色地板上飞快扑腾，脸颊两侧的毛毛也跟着抖动] 本喵才不是想玩，只是觉得这羽毛很碍眼！";
+                    
+                    emoji = "✨"; 
+                    createFallingParticles("⭐");
+                    triggerTempVisualState('happy', 2500);
 
-                    for (var k = 0; k < lines.length; k++) {
-                        var cleanLine = lines[k].trim();
-                        if (!cleanLine) continue;
-                        if (cleanLine === "data: [DONE]") continue;
-                        if (cleanLine.indexOf("data: ") === 0) {
-                            try {
-                                var json = JSON.parse(cleanLine.slice(6));
-                                var chunk = json.choices[0].delta.content || "";
-                                if (chunk) {
-                                    fullText += chunk;
-                                    var cleanChunk = fullText
-                                        .replace(/\[(CORE_MEM|COMMON_MEM):.*?\]/g, "")
-                                        .replace(/\[(CORE_MEM|COMMON_MEM|CO|COMM)?:?.*/g, "");
-                                    onChunk(cleanChunk);
-                                }
-                            } catch (e) {
-                                // 忽略
-                            }
+                } else if (action === 'poke') {
+                    if (state.isIgnoring) {
+                        state.ignoreCount--;
+                        if (state.ignoreCount <= 0) {
+                            play8BitSound('complete');
+                            state.isIgnoring = false;
+                            state.affection = Math.min(100, state.affection + 15);
+                            reply = "好啦好啦！真拿你没办法，小王！[有些别扭地转回脸来，尾巴再次高高竖起] 讨厌，尾巴都被你戳歪了，咻呜！";
+                            emoji = "✨";
+                            
+                            createFallingParticles("⭐");
+                            triggerTempVisualState('happy', 2500);
+                            
+                            const container = document.getElementById('sprite-container');
+                            if (container) container.classList.remove('tsundere-ignore');
+                        } else {
+                            play8BitSound('click');
+                            reply = `不要乱戳！[咻咻猫耷拉着耳朵，仍旧用巧克力色背部对着你]\n（💡提示：看样子还要戳 ${state.ignoreCount} 次哦！）`;
+                            emoji = "💢";
                         }
+                    } else {
+                        play8BitSound('ignore');
+                        reply = "哎呀！[揉了揉眼睛，抖了抖红粉色耳心瞪你] 别乱戳！再戳咻咻可要生气不理你了！";
+                        
+                        emoji = "❔";
+                        createFallingParticles("🪶"); 
+                        triggerTempVisualState('normal', 1500);
+                        
+                        await tryToTriggerIgnore(0.1); 
                     }
                 }
+
+                updateUI(reply, emoji);
             } catch (err) {
-                clearTimeout(timeoutId);
-                onError(err);
+                console.error("Interaction Error:", err);
+            } finally {
+                setTimeout(() => {
+                    setInteractiveState(true);
+                }, 300);
             }
+        }
+
+        function tryToTriggerIgnore(chance) {
+            return new Promise((resolve) => {
+                if (state.lastUserEmotion === 'negative' || state.isIgnoring) {
+                    resolve();
+                    return;
+                }
+                if (Math.random() < chance) {
+                    state.isIgnoring = true;
+                    state.ignoreCount = Math.floor(Math.random() * 2) + 2; 
+                    
+                    const container = document.getElementById('sprite-container');
+                    if (container) container.classList.add('tsundere-ignore');
+                    
+                    setTimeout(() => {
+                        play8BitSound('ignore');
+                        updateUI("哼！[咻咻猫傲娇地转过身去，背对你端坐在粉色地板上] 咻咻决定不理你了！\n（💡提示：点击【👉 戳一戳】好好哄哄它吧！）", "💢");
+                        resolve();
+                    }, 500);
+                } else {
+                    resolve();
+                }
+            });
         }
 
         // 发送文字对话
         async function submitChat() {
             if (state.isProcessing) return;
 
-            var inputEl = document.getElementById('chat-input');
+            const inputEl = document.getElementById('chat-input');
             if (!inputEl) return;
             
-            var text = inputEl.value.trim();
+            const text = inputEl.value.trim();
             if (!text) return;
 
-            var isNegative = /(累|烦|难过|哭|不开心|伤心|失败|委屈|倒霉|绝望|压力|无用|傻|笨|疼|割破|流血|受伤)/i.test(text);
+            play8BitSound('click');
+
+            const cleanKey = getStrictCleanKey();
+            const isDefaultOrInvalid = !cleanKey || 
+                                       cleanKey.length < 15 || 
+                                       cleanKey.includes("API_KEY");
+
+            const isNegative = /(累|烦|难过|哭|不开心|伤心|失败|委屈|倒霉|绝望|压力|无用|傻|笨|疼|割破|流血|受伤)/i.test(text);
             state.lastUserEmotion = isNegative ? 'negative' : 'normal';
 
             state.hunger = Math.max(0, state.hunger - 5);
@@ -1018,152 +1163,75 @@
             if (state.isIgnoring && isNegative) {
                 state.isIgnoring = false;
                 state.ignoreCount = 0;
-                var container = document.getElementById('sprite-container');
+                const container = document.getElementById('sprite-container');
                 if (container) container.classList.remove('tsundere-ignore');
             }
 
-            addChatHistory("user", text);
-
-            var cleanKey = getStrictCleanKey();
-            var isDefaultOrInvalid = !cleanKey || cleanKey.length < 15 || cleanKey.includes("API_KEY") || cleanKey.includes("***");
+            state.chatHistory.push({ role: "user", content: text });
+            if (state.chatHistory.length > 10) {
+                state.chatHistory.shift(); 
+            }
 
             if (isDefaultOrInvalid) {
                 inputEl.value = "";
-                var reply = localFallbackChat(text);
-                addChatHistory("assistant", reply);
+                const reply = localFallbackChat(text);
+                state.chatHistory.push({ role: "assistant", content: reply });
+                if (state.chatHistory.length > 10) state.chatHistory.shift();
                 
                 if (text.match(/\d+[\+\-\*\/]\d+/) || isNegative) {
                     triggerTempVisualState('happy', 2000);
                 }
                 
                 updateUI(reply, "💬");
-                return; 
+                return;
             }
 
             setInteractiveState(false); 
             inputEl.value = ""; 
-            
-            var textContent = document.getElementById('text-content');
-            if (textContent) {
-                textContent.innerText = "咻……[咻咻猫正在思考你的话...]";
-            }
+            updateUI("咻……[咻咻猫正在思考你的话...]", "💭");
 
             try {
-                // 🎬 开启流式缓冲打字引擎
-                Typewriter.startStream();
+                const reply = await fetchAIResponse(text);
+                
+                state.chatHistory.push({ role: "assistant", content: reply });
+                if (state.chatHistory.length > 10) state.chatHistory.shift();
 
-                await fetchAIResponseStream(
-                    text,
-                    // onChunk: 将大模型源源不断推出的字符块静默推入打字队列中
-                    function(cleanChunk) {
-                        Typewriter.updateStreamTarget(cleanChunk);
-                    },
-                    // onDone: 读取完毕，剥离标签，同步数据，静默UI刷新
-                    async function(fullResponse) {
-                        var coreRegex = /\[CORE_MEM:\s*(\w+)\s*=\s*(.*?)\]/g;
-                        var match;
-                        while ((match = coreRegex.exec(fullResponse)) !== null) {
-                            if (match[1] && match[2]) {
-                                MemoryManager.addCoreMemory(match[1].trim(), match[2].trim());
-                            }
-                        }
-
-                        var commonRegex = /\[COMMON_MEM:\s*(.*?)\]/g;
-                        while ((match = commonRegex.exec(fullResponse)) !== null) {
-                            if (match[1]) {
-                                MemoryManager.addCommonMemory(match[1].trim());
-                            }
-                        }
-
-                        var finalCleanText = fullResponse
-                            .replace(/\[CORE_MEM:.*?\]/g, "")
-                            .replace(/\[COMMON_MEM:.*?\]/g, "")
-                            .trim();
-
-                        // 强行同步缓冲区，保证字符无损打印完毕
-                        Typewriter.updateStreamTarget(finalCleanText);
-                        Typewriter.stopStream();
-
-                        addChatHistory("assistant", finalCleanText);
-                        
-                        // 静默刷新状态条和情绪，防止触发重复二次打字
-                        updateUIWithoutTyping(finalCleanText, "💬");
-                        
-                        setInteractiveState(true); 
-
-                        await summarizeOldHistory();
-                    },
-                    // onError
-                    async function(err) {
-                        console.error("Stream Submit Error:", err);
-                        Typewriter.stopStream();
-                        var fallbackReply = localFallbackChat(text);
-                        addChatHistory("assistant", fallbackReply);
-                        updateUI(fallbackReply, "❌");
-                        setInteractiveState(true); 
-                    }
-                );
-            } catch (e) {
-                console.error("Fatal Submit Error:", e);
-                Typewriter.stopStream();
+                updateUI(reply, "💬");
+            } catch (err) {
+                console.error("Chat Submit Error:", err);
+                const fallbackReply = localFallbackChat(text);
+                state.chatHistory.push({ role: "assistant", content: fallbackReply });
+                if (state.chatHistory.length > 10) state.chatHistory.shift();
+                
+                updateUI(fallbackReply, "❌");
+            } finally {
                 setInteractiveState(true); 
             }
         }
 
-        // 用于流式打字完成后的静默状态和变色刷新（不重复打字）
-        function updateUIWithoutTyping(replyText, emoji) {
-            var hungerBar = document.getElementById('hunger-bar');
-            var affectionBar = document.getElementById('affection-bar');
+        function updateUI(replyText, emoji) {
+            const hungerBar = document.getElementById('hunger-bar');
+            const affectionBar = document.getElementById('affection-bar');
 
+            // 动态血条变色
             if (hungerBar) {
                 hungerBar.style.width = state.hunger + '%';
-                if (state.hunger < 30) {
-                    hungerBar.style.backgroundColor = '#a83b3b'; 
-                } else {
-                    hungerBar.style.backgroundColor = '#ff5e7e'; 
-                }
+                hungerBar.style.backgroundColor = state.hunger < 30 ? '#a83b3b' : '#ff5e7e';
             }
             if (affectionBar) {
                 affectionBar.style.width = state.affection + '%';
-                if (state.affection < 30) {
-                    affectionBar.style.backgroundColor = '#5c4349'; 
-                } else {
-                    affectionBar.style.backgroundColor = '#ff2a85'; 
-                }
+                affectionBar.style.backgroundColor = state.affection < 30 ? '#5c4349' : '#ff2a85';
             }
 
+            // 执行打字效果
+            renderText('text-content', replyText, 25);
+
+            // 数据持久化
             saveCurrentState();
+
+            // 刷新外在常驻表情
             updateVisualState();
-
-            if (emoji) {
-                var screen = document.getElementById('game-screen');
-                if (screen) {
-                    var effect = document.createElement('div');
-                    effect.className = 'emoji-effect';
-                    effect.innerText = emoji;
-                    effect.style.left = state.isIgnoring ? '40%' : '60%';
-                    effect.style.top = '50%';
-                    screen.appendChild(effect);
-                    
-                    (function(eff) {
-                        setTimeout(function() {
-                            if (eff && eff.parentNode) {
-                                eff.parentNode.removeChild(eff);
-                            }
-                        }, 1000);
-                    })(effect);
-                }
-            }
         }
-
-        // ==========================================
-        // ⌨️ 全局事件绑定
-        // ==========================================
-        window.onload = function() {
-            // 初始化打字目标DOM
-            Typewriter.init(document.getElementById('text-content'));
-            wakeupXiuXiu();
-        };
     </script>
 </body>
 </html>
