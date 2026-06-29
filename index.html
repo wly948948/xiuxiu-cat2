@@ -1,3 +1,4 @@
+html
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
@@ -194,7 +195,7 @@
         #sprite-container.state-happy .eye-open-pupil { display: none !important; }
 
 
-        /* 优化后的对话框布局 */
+        /* 对话框布局 */
         #dialogue-box {
             background: #1a1512;
             border: 4px solid #fff;
@@ -305,19 +306,19 @@
             border-radius: 4px;
         }
 
-        /* 气泡文字特效样式 */
+        /* 气泡浮动特效样式 */
         .emoji-effect {
             position: absolute;
             font-size: 24px;
             pointer-events: none;
             z-index: 99;
-            animation: fadeFloatUp 1s ease-out forwards;
+            animation: fadeFloatUp 1s cubic-bezier(0.18, 0.89, 0.32, 1.28) forwards;
         }
 
         @keyframes fadeFloatUp {
             0% { transform: translate(-50%, -50%) scale(0.6); opacity: 0; }
             20% { opacity: 1; transform: translate(-50%, -80%) scale(1.1); }
-            100% { transform: translate(-50%, -160%) scale(0.8); opacity: 0; }
+            100% { transform: translate(-50%, -170%) scale(0.8); opacity: 0; }
         }
     </style>
 </head>
@@ -430,7 +431,6 @@
 
         <div id="dialogue-box">
             <div id="speaker">咻咻猫</div>
-            <!-- 👑 HTML 物理防死锁兜底台词 -->
             <div id="text-content">咻呜！小王你终于舍得开机了？[从粉色地板上慢吞吞地爬起来，伸了个腰] 本喵等得胡子都歪了！</div>
         </div>
 
@@ -449,16 +449,16 @@
 
     <script>
         // ==========================================
-        // ⚙️ 接口配置
+        // ⚙️ 接口配置 (优先读取本地，没有则用硬编码默认值)
         // ==========================================
         var CONFIG = {
-            apiKey: localStorage.getItem('xiuxiu_api_key') || "", 
+            apiKey: localStorage.getItem('xiuxiu_api_key') || "sk-ephvdecvurhviermvzutqqegqessydmogyjjhlgzghzdxvwz", 
             apiUrl: "https://api.siliconflow.cn/v1", 
             apiModel: "Qwen/Qwen2.5-7B-Instruct"     
         };
 
         // ==========================================
-        // 💾 结构化记忆管理器 (MemoryManager) - 满足需求 2 (重要记忆永久，普通记忆滚动淘汰)
+        // 💾 结构化记忆管理器 (MemoryManager) - 满足需求 2
         // ==========================================
         var MemoryManager = {
             getMemory: function() {
@@ -478,7 +478,6 @@
                 } else if (key === 'occupation') {
                     mem.core.occupation = value;
                 } else if (key === 'longTermPrefs') {
-                    // 防止重复存入
                     var exists = false;
                     for (var i = 0; i < mem.core.longTermPrefs.length; i++) {
                         if (mem.core.longTermPrefs[i].toLowerCase() === value.toLowerCase()) {
@@ -491,7 +490,7 @@
                     }
                 }
                 this.saveMemory(mem);
-                console.log("💾 已存入核心记忆 (" + key + "): " + value);
+                console.log("💾 存入核心重要记忆 (" + key + "): " + value);
             },
             addCommonMemory: function(fact) {
                 var mem = this.getMemory();
@@ -504,13 +503,12 @@
                 }
                 if (!exists) {
                     mem.common.push(fact);
-                    // 普通记忆最大限制为 5 个，超出时按 FIFO 滚动淘汰
                     if (mem.common.length > 5) {
                         var removed = mem.common.shift();
-                        console.log("🗑️ 普通记忆超出上限，淘汰淘汰: " + removed);
+                        console.log("🗑️ 动态淘汰旧日常记忆: " + removed);
                     }
                     this.saveMemory(mem);
-                    console.log("📝 已存入普通记忆: " + fact);
+                    console.log("📝 存入普通临时记忆: " + fact);
                 }
             },
             getMemoryPrompt: function() {
@@ -530,7 +528,7 @@
                         lines.push("- " + mem.common[i]);
                     }
                 } else {
-                    lines.push("- 暂无日常记忆。");
+                    lines.push("- 暂无日常普通记忆。");
                 }
                 return lines.join('\n');
             }
@@ -603,18 +601,16 @@
         // 💬 对话历史管理与连续摘要滚动机制 - 满足需求 3
         // ==========================================
         async function summarizeOldHistory() {
-            // 只保留最近6轮对话（即 12 条消息），超过则触发重新总结
             if (state.chatHistory.length <= 12) return;
 
             var cleanKey = getStrictCleanKey();
             if (!cleanKey) return;
 
-            // 提取最老的 4 条对话（2轮）进行压缩并移出窗口
             var toSummarize = state.chatHistory.slice(0, 4);
             state.chatHistory = state.chatHistory.slice(4);
 
             var oldSummary = state.summary || "暂无历史对话背景。";
-            var summaryPrompt = "请结合【旧的对话背景摘要】和【新增的对话记录】，重新合并提炼成一个精简、连贯、且控制在80字以内的【新对话背景摘要】。直接输出新摘要，不要有前缀或解释。\n\n" +
+            var summaryPrompt = "请结合【旧的对话背景摘要】和【新增的对话记录】，重新合并提炼成一个精简、连贯、且控制在80字以内的【新对话背景摘要】。直接输出新摘要，不要有任何多余的话。\n\n" +
                                 "【旧的对话背景摘要】:\n" + oldSummary + "\n\n" +
                                 "【新增的对话记录】:\n" + JSON.stringify(toSummarize);
 
@@ -628,7 +624,7 @@
                     body: JSON.stringify({
                         model: CONFIG.apiModel,
                         messages: [
-                            { role: "system", content: "你是一个专业的记忆重组助手。不要输出客套话，只能输出总结后的新对话背景背景。" },
+                            { role: "system", content: "你是一个专业的记忆重组助手。不准输出客套话，只输出重写合并后的新对话背景摘要内容。" },
                             { role: "user", content: summaryPrompt }
                         ],
                         max_tokens: 150,
@@ -643,7 +639,6 @@
                     saveCurrentState();
                     console.log("🔄 连续摘要重新总结成功! 新的 Summary:", state.summary);
                 } else {
-                    // 压缩失败则进行历史回退，防止丢失上下文
                     state.chatHistory = toSummarize.concat(state.chatHistory);
                 }
             } catch (e) {
@@ -789,7 +784,7 @@
         // ==========================================
         // 🧩 Prompt 拆分与结构化重组逻辑 - 满足需求 1 & 2
         // ==========================================
-        var BASE_PROMPT = "你是一只名叫“咻咻猫”的16位像素风电子宠物猫，今年10岁了，是主人“小王”养了十年的巧克力色小猫。\n\n" +
+        var BASE_PROMPT = "你是一只名叫“咻咻猫”的16位像素风电子宠物猫，今年10岁了，是主人“小王”养了十年的巧克力色老猫。\n\n" +
                           "【设定规则】\n" +
                           "1. 语气：说话带“咻”或“咻呜”的尾音。根据当前的情感状态决定你的亲密程度。\n" +
                           "2. 动作描述：把你的神态、小动作描写放在方括号 [] 里（例如：[亲昵地用巧克力色的脸颊蹭了蹭小王的手，高兴地咪起眼]）。\n" +
@@ -839,12 +834,12 @@
         }
 
         // ==========================================
-        // 🌊 原生流式请求渲染器 (Streaming) - 满足需求 4 (使用 response.body.getReader 真流式)
+        // 🌊 原生流式请求渲染器 (Streaming) - 满足需求 4
         // ==========================================
         async function fetchAIResponseStream(userMessage, onChunk, onDone, onError) {
             var cleanKey = getStrictCleanKey();
 
-            // 离线单机模式下模拟流式打字输出（打字效果仅在单机时作为模拟体验）
+            // 离线单机模式下模拟流式打字输出
             if (!cleanKey || cleanKey.length < 15 || cleanKey.includes("API_KEY")) {
                 var reply = localFallbackChat(userMessage);
                 var currentText = "";
@@ -886,7 +881,7 @@
                         messages: messagesPayload,
                         max_tokens: 180, 
                         temperature: 0.6,
-                        stream: true // 开启流式参数
+                        stream: true 
                     }),
                     signal: controller.signal
                 });
@@ -898,7 +893,6 @@
                     throw new Error("[HTTP " + response.status + "] - " + errText);
                 }
 
-                // 🌟 安全兜底：如果运行平台不支持 ReadableStream，自动安全降级到常规 HTTP
                 if (!response.body || !response.body.getReader) {
                     var fallbackData = await response.json();
                     var fallbackContent = fallbackData.choices[0].message.content || "";
@@ -907,7 +901,6 @@
                     return;
                 }
 
-                // 🎮 核心：利用 response.body.getReader() 进行逐块真·流式渲染
                 var reader = response.body.getReader();
                 var decoder = new TextDecoder("utf-8");
                 var buffer = "";
@@ -934,14 +927,13 @@
                                 var chunk = json.choices[0].delta.content || "";
                                 if (chunk) {
                                     fullText += chunk;
-                                    // 动态过滤流式中未输出完全的 [MEM... 标签，对用户绝对隐形，防止闪烁
                                     var cleanChunk = fullText
                                         .replace(/\[(CORE_MEM|COMMON_MEM):.*?\]/g, "")
                                         .replace(/\[(CORE_MEM|COMMON_MEM|CO|COMM)?:?.*/g, "");
                                     onChunk(cleanChunk);
                                 }
                             } catch (e) {
-                                // 忽略解析异常
+                                // 忽略
                             }
                         }
                     }
@@ -1021,7 +1013,6 @@
                             emoji = "💢";
                         }
                     } else {
-                        // 🧠 戳一戳：强行清空对话记忆，重置最近情感，防止长期聊崩
                         state.chatHistory = []; 
                         state.lastUserEmotion = 'normal';
                         reply = "哎呀！[揉了揉眼睛，摇了摇巧克力色圆头，瞬间忘掉了刚刚聊过的一切] 别乱戳！咻咻都被你戳得记不清事了，小王！";
@@ -1094,6 +1085,22 @@
 
             addChatHistory("user", text);
 
+            var cleanKey = getStrictCleanKey();
+            var isDefaultOrInvalid = !cleanKey || cleanKey.length < 15 || cleanKey.includes("API_KEY") || cleanKey.includes("***");
+
+            if (isDefaultOrInvalid) {
+                inputEl.value = "";
+                var reply = localFallbackChat(text);
+                addChatHistory("assistant", reply);
+                
+                if (text.match(/\d+[\+\-\*\/]\d+/) || isNegative) {
+                    triggerTempVisualState('happy', 2000);
+                }
+                
+                updateUI(reply, "💬");
+                return; 
+            }
+
             setInteractiveState(false); 
             inputEl.value = ""; 
             
@@ -1102,53 +1109,55 @@
                 textContent.innerText = "咻……[咻咻猫正在思考你的话...]";
             }
 
-            // 调用流式传输，在 onChunk 中真流式更新
-            await fetchAIResponseStream(
-                text,
-                function(cleanChunk) {
-                    if (textContent) {
-                        textContent.innerText = cleanChunk;
-                        textContent.scrollTop = textContent.scrollHeight;
-                    }
-                },
-                async function(fullResponse) {
-                    // 对话结束，提取结构化新记忆并分别存入 
-                    var coreRegex = /\[CORE_MEM:\s*(\w+)\s*=\s*(.*?)\]/g;
-                    var match;
-                    while ((match = coreRegex.exec(fullResponse)) !== null) {
-                        if (match[1] && match[2]) {
-                            MemoryManager.addCoreMemory(match[1].trim(), match[2].trim());
+            try {
+                await fetchAIResponseStream(
+                    text,
+                    function(cleanChunk) {
+                        if (textContent) {
+                            textContent.innerText = cleanChunk;
+                            textContent.scrollTop = textContent.scrollHeight;
                         }
-                    }
-
-                    var commonRegex = /\[COMMON_MEM:\s*(.*?)\]/g;
-                    while ((match = commonRegex.exec(fullResponse)) !== null) {
-                        if (match[1]) {
-                            MemoryManager.addCommonMemory(match[1].trim());
+                    },
+                    async function(fullResponse) {
+                        var coreRegex = /\[CORE_MEM:\s*(\w+)\s*=\s*(.*?)\]/g;
+                        var match;
+                        while ((match = coreRegex.exec(fullResponse)) !== null) {
+                            if (match[1] && match[2]) {
+                                MemoryManager.addCoreMemory(match[1].trim(), match[2].trim());
+                            }
                         }
+
+                        var commonRegex = /\[COMMON_MEM:\s*(.*?)\]/g;
+                        while ((match = commonRegex.exec(fullResponse)) !== null) {
+                            if (match[1]) {
+                                MemoryManager.addCommonMemory(match[1].trim());
+                            }
+                        }
+
+                        var finalCleanText = fullResponse
+                            .replace(/\[CORE_MEM:.*?\]/g, "")
+                            .replace(/\[COMMON_MEM:.*?\]/g, "")
+                            .trim();
+
+                        addChatHistory("assistant", finalCleanText);
+                        updateUI(finalCleanText, "💬");
+                        
+                        setInteractiveState(true); 
+
+                        await summarizeOldHistory();
+                    },
+                    async function(err) {
+                        console.error("Stream Submit Error:", err);
+                        var fallbackReply = localFallbackChat(text);
+                        addChatHistory("assistant", fallbackReply);
+                        updateUI(fallbackReply, "❌");
+                        setInteractiveState(true); 
                     }
-
-                    // 剥离所有记忆标签，呈现最纯净的台词给用户
-                    var finalCleanText = fullResponse
-                        .replace(/\[CORE_MEM:.*?\]/g, "")
-                        .replace(/\[COMMON_MEM:.*?\]/g, "")
-                        .trim();
-
-                    addChatHistory("assistant", finalCleanText);
-                    updateUI(finalCleanText, "💬");
-                    setInteractiveState(true);
-
-                    // 在后台默默执行滚动连续总结
-                    await summarizeOldHistory();
-                },
-                async function(err) {
-                    console.error("Stream Submit Error:", err);
-                    var fallbackReply = localFallbackChat(text);
-                    addChatHistory("assistant", fallbackReply);
-                    updateUI(fallbackReply, "❌");
-                    setInteractiveState(true);
-                }
-            );
+                );
+            } catch (e) {
+                console.error("Fatal Submit Error:", e);
+                setInteractiveState(true); 
+            }
         }
 
         function updateUI(replyText, emoji) {
@@ -1198,23 +1207,6 @@
                 }
             }
         }
-
-        // ==========================================
-        // ⌨️ 全局初始化
-        // ==========================================
-        window.onload = function() {
-            wakeupXiuXiu();
-
-            // 双击配置 key
-     var CONFIG = {
-            apiKey: localStorage.getItem('xiuxiu_api_key') || "sk-ephvdecvurhviermvzutqqegqessydmogyjjhlgzghzdxvwz", // 在此处填入您完整的 sk-... 密钥
-            apiUrl: "https://api.siliconflow.cn/v1", 
-            apiModel: "Qwen/Qwen2.5-7B-Instruct"     
-        };
-                    }
-                };
-            }
-        };
     </script>
 </body>
 </html>
