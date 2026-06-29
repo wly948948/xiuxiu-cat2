@@ -305,7 +305,7 @@
             border-radius: 4px;
         }
 
-        /* 气泡浮动特效样式 */
+        /* 气泡文字特效样式 */
         .emoji-effect {
             position: absolute;
             font-size: 24px;
@@ -448,10 +448,10 @@
 
     <script>
         // ==========================================
-        // ⚙️ 接口配置 (优先读取本地，没有则用硬编码默认值)
+        // ⚙️ 接口配置 (在此直接硬编码写死您的 API Key)
         // ==========================================
         var CONFIG = {
-            apiKey: localStorage.getItem('xiuxiu_api_key') || "sk-ephvdecvurhviermvzutqqegqessydmogyjjhlgzghzdxvwz", 
+            apiKey: "sk-ephvdecvurhviermvzutqqegqessydmogyjjhlgzghzdxvwz", // 请在此处填入您完整的sk-...密钥
             apiUrl: "https://api.siliconflow.cn/v1", 
             apiModel: "Qwen/Qwen2.5-7B-Instruct"     
         };
@@ -530,6 +530,79 @@
                     lines.push("- 暂无日常普通记忆。");
                 }
                 return lines.join('\n');
+            }
+        };
+
+        // 🤖 核心缓冲打字机控制器 (TypewriterEngine) - 彻底解决闪烁与不均匀吐字问题
+        var Typewriter = {
+            timer: null,
+            targetText: "",
+            currentText: "",
+            element: null,
+            speed: 30, // 打字间隔时间（毫秒）
+
+            init: function(el) {
+                this.element = el;
+            },
+
+            // 1. 用于瞬发完整文本的打字（如喂食、摸头等动作或唤醒）
+            typeInstant: function(text) {
+                if (this.timer) clearInterval(this.timer);
+                this.targetText = text;
+                this.currentText = "";
+                if (this.element) this.element.innerText = "";
+                
+                var self = this;
+                this.timer = setInterval(function() {
+                    if (self.currentText.length < self.targetText.length) {
+                        var nextChar = self.targetText.charAt(self.currentText.length);
+                        self.currentText += nextChar;
+                        if (self.element) {
+                            self.element.innerText = self.currentText;
+                            self.element.scrollTop = self.element.scrollHeight;
+                        }
+                    } else {
+                        clearInterval(self.timer);
+                        self.timer = null;
+                    }
+                }, this.speed);
+            },
+
+            // 2. 开启用于 API 传输的流式缓冲打字
+            startStream: function() {
+                if (this.timer) clearInterval(this.timer);
+                this.targetText = "";
+                this.currentText = "";
+                if (this.element) this.element.innerText = "";
+
+                var self = this;
+                this.timer = setInterval(function() {
+                    if (self.currentText.length < self.targetText.length) {
+                        var nextChar = self.targetText.charAt(self.currentText.length);
+                        self.currentText += nextChar;
+                        if (self.element) {
+                            self.element.innerText = self.currentText;
+                            self.element.scrollTop = self.element.scrollHeight;
+                        }
+                    }
+                }, this.speed);
+            },
+
+            // 3. 静默追加从网络获取的数据流，绝不打扰当前的渲染循环
+            updateStreamTarget: function(text) {
+                this.targetText = text;
+            },
+
+            // 4. 流传输完毕时清空并强行补全剩余字符
+            stopStream: function() {
+                if (this.timer) {
+                    clearInterval(this.timer);
+                    this.timer = null;
+                }
+                if (this.element) {
+                    this.element.innerText = this.targetText;
+                    this.element.scrollTop = this.element.scrollHeight;
+                }
             }
         };
 
@@ -673,25 +746,9 @@
             updateVisualState();
         }
 
-        // 🎬 16-bit 静态文本打字机渲染器（用于喂食/摸摸等非流式交互）
-        var typingTimer = null;
+        // 🎬 打字渲染中继接口（用于物理喂食/摸摸等瞬发响应）
         function displayTextWithEffect(text) {
-            var el = document.getElementById('text-content');
-            if (!el) return;
-            
-            if (typingTimer) clearTimeout(typingTimer);
-            el.innerText = "";
-            var i = 0;
-            
-            function type() {
-                if (i < text.length) {
-                    el.innerText += text.charAt(i);
-                    i++;
-                    el.scrollTop = el.scrollHeight;
-                    typingTimer = setTimeout(type, 30);
-                }
-            }
-            type();
+            Typewriter.typeInstant(text);
         }
 
         // 情绪动画控制引擎
@@ -943,123 +1000,6 @@
             }
         }
 
-        // 核心物理交互逻辑
-        async function interact(action) {
-            if (state.isProcessing) return; 
-            
-            if (state.lastUserEmotion === 'negative') {
-                // 主人心情不好时不限制玩耍
-            } else {
-                if (state.affection < 30 && action !== 'feed' && action !== 'poke') {
-                    var reply = "哼！[咻咻猫冷冷地转过身，用背部对着你] 好感度低于30（当前：" + state.affection + "），咻咻正处于【情感冰点】！现在的我不接受任何摸摸或玩耍，除非你先喂我小鱼干，或者戳我道歉！";
-                    updateUI(reply, "💔");
-                    return;
-                }
-            }
-
-            setInteractiveState(false); 
-
-            try {
-                var reply = "";
-                var emoji = "";
-
-                if (state.isIgnoring && action !== 'poke') {
-                    reply = "…… [咻咻猫固执地背对着你，把巧克力色大尾巴甩得邦邦响，似乎在等你跟它道歉] 哼。";
-                    updateUI(reply, "💢");
-                    return;
-                }
-
-                if (action === 'feed') {
-                    state.hunger = Math.min(100, state.hunger + 20);
-                    state.affection = Math.min(100, state.affection + 5);
-                    reply = "咻！鱼干真香！[吧唧吧唧地吃完，用小舌头舔了舔雪白的口罩区域] 算你识相，小王！";
-                    
-                    emoji = "🐟"; 
-                    triggerTempVisualState('happy', 2500);
-
-                    await tryToTriggerIgnore(0.15); 
-                } else if (action === 'pet') {
-                    state.affection = Math.min(100, state.affection + 12);
-                    reply = "呼噜呼噜……[虽然很舒服但转过了大圆头] 哼，只是看在相处十年的份上才让小王你摸一摸的！";
-                    
-                    emoji = "❤️"; 
-                    triggerTempVisualState('happy', 2500);
-
-                    await tryToTriggerIgnore(0.2); 
-                } else if (action === 'play') {
-                    state.hunger = Math.max(0, state.hunger - 10);
-                    state.affection = Math.min(100, state.affection + 10);
-                    reply = "咻！看爪！[在粉色地板上飞快扑腾，脸颊两侧的毛毛也跟着抖动] 本喵才不是想玩，只是觉得这羽毛很碍眼！";
-                    
-                    emoji = "✨"; 
-                    triggerTempVisualState('happy', 2500);
-
-                } else if (action === 'poke') {
-                    if (state.isIgnoring) {
-                        state.ignoreCount--;
-                        if (state.ignoreCount <= 0) {
-                            state.isIgnoring = false;
-                            state.affection = Math.min(100, state.affection + 15);
-                            reply = "好啦好啦！真拿你没办法，小王！[有些别扭地转回脸来，尾巴再次高高竖起] 讨厌，尾巴都被你戳歪了，咻呜！";
-                            emoji = "✨";
-                            
-                            triggerTempVisualState('happy', 2500);
-                            
-                            var container = document.getElementById('sprite-container');
-                            if (container) container.classList.remove('tsundere-ignore');
-                        } else {
-                            reply = "不要乱戳！[咻咻猫耷拉着耳朵，仍旧用巧克力色背部对着你]\n（💡提示：如果还没好就再戳一下，看样子还要戳 " + state.ignoreCount + " 次哦！）";
-                            emoji = "💢";
-                        }
-                    } else {
-                        state.chatHistory = []; 
-                        state.lastUserEmotion = 'normal';
-                        reply = "哎呀！[揉了揉眼睛，摇了摇巧克力色圆头，瞬间忘掉了刚刚聊过的一切] 别乱戳！咻咻都被你戳得记不清事了，小王！";
-                        emoji = "❔";
-                        
-                        triggerTempVisualState('normal', 1500);
-                        
-                        await tryToTriggerIgnore(0.1); 
-                    }
-                }
-
-                updateUI(reply, emoji);
-            } catch (err) {
-                console.error("Interaction Error:", err);
-            } finally {
-                setTimeout(function() {
-                    setInteractiveState(true);
-                }, 300);
-            }
-        }
-
-        function tryToTriggerIgnore(chance) {
-            return new Promise(function(resolve) {
-                if (state.lastUserEmotion === 'negative') {
-                    resolve();
-                    return;
-                }
-                if (state.isIgnoring) {
-                    resolve();
-                    return;
-                }
-                if (Math.random() < chance) {
-                    state.isIgnoring = true;
-                    state.ignoreCount = Math.floor(Math.random() * 2) + 2; 
-                    
-                    var container = document.getElementById('sprite-container');
-                    if (container) container.classList.add('tsundere-ignore');
-                    
-                    setTimeout(function() {
-                        updateUI("哼！[咻咻猫傲娇地转过身去，背对你端坐在粉色地板上] 咻咻决定不理你了！\n（💡提示：小猫生气的时候很好哄哦，点击【👉 戳一戳】逗逗它就好啦！）", "💢");
-                        resolve();
-                    }, 500);
-                } else {
-                    resolve();
-                }
-            });
-        }
-
         // 发送文字对话
         async function submitChat() {
             if (state.isProcessing) return;
@@ -1109,14 +1049,16 @@
             }
 
             try {
+                // 🎬 开启流式缓冲打字引擎
+                Typewriter.startStream();
+
                 await fetchAIResponseStream(
                     text,
+                    // onChunk: 将大模型源源不断推出的字符块静默推入打字队列中
                     function(cleanChunk) {
-                        if (textContent) {
-                            textContent.innerText = cleanChunk;
-                            textContent.scrollTop = textContent.scrollHeight;
-                        }
+                        Typewriter.updateStreamTarget(cleanChunk);
                     },
+                    // onDone: 读取完毕，剥离标签，同步数据，静默UI刷新
                     async function(fullResponse) {
                         var coreRegex = /\[CORE_MEM:\s*(\w+)\s*=\s*(.*?)\]/g;
                         var match;
@@ -1138,15 +1080,23 @@
                             .replace(/\[COMMON_MEM:.*?\]/g, "")
                             .trim();
 
+                        // 强行同步缓冲区，保证字符无损打印完毕
+                        Typewriter.updateStreamTarget(finalCleanText);
+                        Typewriter.stopStream();
+
                         addChatHistory("assistant", finalCleanText);
-                        updateUI(finalCleanText, "💬");
+                        
+                        // 静默刷新状态条和情绪，防止触发重复二次打字
+                        updateUIWithoutTyping(finalCleanText, "💬");
                         
                         setInteractiveState(true); 
 
                         await summarizeOldHistory();
                     },
+                    // onError
                     async function(err) {
                         console.error("Stream Submit Error:", err);
+                        Typewriter.stopStream();
                         var fallbackReply = localFallbackChat(text);
                         addChatHistory("assistant", fallbackReply);
                         updateUI(fallbackReply, "❌");
@@ -1155,14 +1105,15 @@
                 );
             } catch (e) {
                 console.error("Fatal Submit Error:", e);
+                Typewriter.stopStream();
                 setInteractiveState(true); 
             }
         }
 
-        function updateUI(replyText, emoji) {
+        // 用于流式打字完成后的静默状态和变色刷新（不重复打字）
+        function updateUIWithoutTyping(replyText, emoji) {
             var hungerBar = document.getElementById('hunger-bar');
             var affectionBar = document.getElementById('affection-bar');
-            var textContent = document.getElementById('text-content');
 
             if (hungerBar) {
                 hungerBar.style.width = state.hunger + '%';
@@ -1180,8 +1131,6 @@
                     affectionBar.style.backgroundColor = '#ff2a85'; 
                 }
             }
-
-            displayTextWithEffect(replyText);
 
             saveCurrentState();
             updateVisualState();
@@ -1206,6 +1155,15 @@
                 }
             }
         }
+
+        // ==========================================
+        // ⌨️ 全局事件绑定
+        // ==========================================
+        window.onload = function() {
+            // 初始化打字目标DOM
+            Typewriter.init(document.getElementById('text-content'));
+            wakeupXiuXiu();
+        };
     </script>
 </body>
 </html>
