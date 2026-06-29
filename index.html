@@ -57,30 +57,6 @@
             pointer-events: none;
         }
 
-        /* 关闭 CRT 特效时的样式 */
-        #game-screen.no-crt::before {
-            display: none;
-        }
-
-        /* CRT 切换微型按钮 */
-        #crt-toggle {
-            position: absolute;
-            top: 15px;
-            right: 15px;
-            background: #4e3522;
-            border: 2px solid #ab825f;
-            color: #ffd1dc;
-            font-size: 9px;
-            padding: 2px 6px;
-            cursor: pointer;
-            z-index: 20;
-            border-radius: 3px;
-            font-family: inherit;
-        }
-        #crt-toggle:active {
-            transform: scale(0.95);
-        }
-
         /* 状态面板 */
         #status-bars {
             position: absolute;
@@ -352,9 +328,6 @@
     <div id="game-console">
         <!-- 屏幕区域 -->
         <div id="game-screen">
-            <!-- CRT开关 -->
-            <button id="crt-toggle" onclick="toggleCRT()">CRT: ON</button>
-
             <!-- 状态面板 -->
             <div id="status-bars">
                 <div class="bar-container">
@@ -486,95 +459,6 @@
         };
 
         // ==========================================
-        // 🔊 8-bit 经典红白机声音合成系统 (Web Audio API)
-        // ==========================================
-        let audioCtx = null;
-
-        function getAudioContext() {
-            if (!audioCtx) {
-                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-            }
-            return audioCtx;
-        }
-
-        function play8BitSound(type) {
-            try {
-                const ctx = getAudioContext();
-                if (ctx.state === 'suspended') {
-                    ctx.resume();
-                }
-
-                const osc = ctx.createOscillator();
-                const gainNode = ctx.createGain();
-                osc.connect(gainNode);
-                gainNode.connect(ctx.destination);
-
-                const now = ctx.currentTime;
-
-                if (type === 'tick') {
-                    // 打字小嘀嗒声
-                    osc.type = 'square';
-                    osc.frequency.setValueAtTime(600, now);
-                    gainNode.gain.setValueAtTime(0.015, now);
-                    gainNode.gain.exponentialRampToValueAtTime(0.0001, now + 0.04);
-                    osc.start(now);
-                    osc.stop(now + 0.04);
-                } else if (type === 'click') {
-                    // 普通按钮声
-                    osc.type = 'square';
-                    osc.frequency.setValueAtTime(800, now);
-                    gainNode.gain.setValueAtTime(0.04, now);
-                    gainNode.gain.exponentialRampToValueAtTime(0.0001, now + 0.08);
-                    osc.start(now);
-                    osc.stop(now + 0.08);
-                } else if (type === 'feed') {
-                    // 喂食上升琶音
-                    osc.type = 'triangle';
-                    osc.frequency.setValueAtTime(261.63, now); // C4
-                    osc.frequency.setValueAtTime(329.63, now + 0.07); // E4
-                    osc.frequency.setValueAtTime(392.00, now + 0.14); // G4
-                    osc.frequency.setValueAtTime(523.25, now + 0.21); // C5
-                    gainNode.gain.setValueAtTime(0.08, now);
-                    gainNode.gain.exponentialRampToValueAtTime(0.0001, now + 0.35);
-                    osc.start(now);
-                    osc.stop(now + 0.35);
-                } else if (type === 'pet') {
-                    // 摸头温柔震音（呼噜模拟）
-                    osc.type = 'sine';
-                    osc.frequency.setValueAtTime(140, now);
-                    osc.frequency.linearRampToValueAtTime(180, now + 0.15);
-                    osc.frequency.linearRampToValueAtTime(130, now + 0.3);
-                    gainNode.gain.setValueAtTime(0.08, now);
-                    gainNode.gain.linearRampToValueAtTime(0.02, now + 0.15);
-                    gainNode.gain.linearRampToValueAtTime(0.08, now + 0.3);
-                    gainNode.gain.exponentialRampToValueAtTime(0.0001, now + 0.4);
-                    osc.start(now);
-                    osc.stop(now + 0.4);
-                } else if (type === 'ignore') {
-                    // 生气/拒绝冷战下降音
-                    osc.type = 'sawtooth';
-                    osc.frequency.setValueAtTime(320, now);
-                    osc.frequency.linearRampToValueAtTime(110, now + 0.35);
-                    gainNode.gain.setValueAtTime(0.05, now);
-                    gainNode.gain.exponentialRampToValueAtTime(0.0001, now + 0.35);
-                    osc.start(now);
-                    osc.stop(now + 0.35);
-                } else if (type === 'complete') {
-                    // 成功破冰明快双音
-                    osc.type = 'square';
-                    osc.frequency.setValueAtTime(440, now); // A4
-                    osc.frequency.setValueAtTime(554.37, now + 0.1); // C#5
-                    gainNode.gain.setValueAtTime(0.06, now);
-                    gainNode.gain.exponentialRampToValueAtTime(0.0001, now + 0.25);
-                    osc.start(now);
-                    osc.stop(now + 0.25);
-                }
-            } catch (e) {
-                console.warn("音频上下文启动受阻:", e);
-            }
-        }
-
-        // ==========================================
         // ✍️ 仿游戏 RPG 打字机排版显示引擎
         // ==========================================
         let typewriterTimer = null;
@@ -598,13 +482,6 @@
             typewriterTimer = setInterval(() => {
                 if (index < text.length) {
                     container.innerText += text[index];
-                    
-                    // 排除空格和换行播放音效，降低干扰
-                    const char = text[index];
-                    if (char !== " " && char !== "\n" && index % 2 === 0) {
-                        play8BitSound('tick');
-                    }
-                    
                     index++;
                     // 保持滚动条处于最底端
                     container.scrollTop = container.scrollHeight;
@@ -625,21 +502,6 @@
                     container.scrollTop = container.scrollHeight;
                 }
                 isWriting = false;
-                play8BitSound('click');
-            }
-        }
-
-        // CRT滤镜控制
-        function toggleCRT() {
-            play8BitSound('click');
-            const screen = document.getElementById('game-screen');
-            const btn = document.getElementById('crt-toggle');
-            if (screen.classList.contains('no-crt')) {
-                screen.classList.remove('no-crt');
-                btn.innerText = "CRT: ON";
-            } else {
-                screen.classList.add('no-crt');
-                btn.innerText = "CRT: OFF";
             }
         }
 
@@ -660,7 +522,7 @@
                 const saved = localStorage.getItem('xiuxiu_pet_state_v8');
                 if (saved) {
                     const parsed = JSON.parse(saved);
-                    // 健壮性保障：平滑合并，缺失的字段自动用默认值代替，防止新版本参数引发底层崩溃
+                    // 自动安全合并参数结构，确保平滑向前兼容
                     return Object.assign({}, defaults, parsed, { isProcessing: false });
                 }
             } catch (e) {
@@ -831,7 +693,7 @@
             }
 
             const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 8000); // 增加到8秒，保证模型反应时间
+            const timeoutId = setTimeout(() => controller.abort(), 8000); 
 
             const messagesPayload = [
                 { role: "system", content: getSystemPrompt() },
@@ -1021,8 +883,7 @@
             // 如果主人最近处于消极情绪状态，不触发傲娇无视
             if (state.lastUserEmotion !== 'negative') {
                 if (state.affection < 30 && action !== 'feed' && action !== 'poke') {
-                    play8BitSound('ignore');
-                    const reply = "哼！[咻咻猫冷冷地转过身，用背部对着你] 好好感度太低了，咻咻正处于【情感冰点】！不接受任何摸摸，快先喂我小鱼干！";
+                    const reply = "哼！[咻咻猫冷冷地转过身，用背部对着你] 好感度太低了，咻咻正处于【情感冰点】！不接受任何摸摸，快先喂我小鱼干！";
                     updateUI(reply, "💔");
                     return;
                 }
@@ -1035,14 +896,12 @@
                 let emoji = "";
 
                 if (state.isIgnoring && action !== 'poke') {
-                    play8BitSound('ignore');
                     reply = "…… [咻咻猫固执地背对着你，把大尾巴甩得邦邦响] 哼。";
                     updateUI(reply, "💢");
                     return;
                 }
 
                 if (action === 'feed') {
-                    play8BitSound('feed');
                     state.hunger = Math.min(100, state.hunger + 20);
                     state.affection = Math.min(100, state.affection + 5);
                     reply = "咻！鱼干真香！[吧唧吧唧地吃完，用小舌头舔了舔雪白的口罩区域] 算你识相，小王！";
@@ -1053,7 +912,6 @@
 
                     await tryToTriggerIgnore(0.15); 
                 } else if (action === 'pet') {
-                    play8BitSound('pet');
                     state.affection = Math.min(100, state.affection + 12);
                     reply = "呼噜呼噜……[虽然很舒服但转过了大圆头] 哼，只是看在相处十年的份上才让小王你摸一摸的！";
                     
@@ -1063,7 +921,6 @@
 
                     await tryToTriggerIgnore(0.2); 
                 } else if (action === 'play') {
-                    play8BitSound('feed'); // 游玩也使用上行琶音
                     state.hunger = Math.max(0, state.hunger - 10);
                     state.affection = Math.min(100, state.affection + 10);
                     reply = "咻！看爪！[在粉色地板上飞快扑腾，脸颊两侧的毛毛也跟着抖动] 本喵才不是想玩，只是觉得这羽毛很碍眼！";
@@ -1076,7 +933,6 @@
                     if (state.isIgnoring) {
                         state.ignoreCount--;
                         if (state.ignoreCount <= 0) {
-                            play8BitSound('complete');
                             state.isIgnoring = false;
                             state.affection = Math.min(100, state.affection + 15);
                             reply = "好啦好啦！真拿你没办法，小王！[有些别扭地转回脸来，尾巴再次高高竖起] 讨厌，尾巴都被你戳歪了，咻呜！";
@@ -1088,12 +944,10 @@
                             const container = document.getElementById('sprite-container');
                             if (container) container.classList.remove('tsundere-ignore');
                         } else {
-                            play8BitSound('click');
                             reply = `不要乱戳！[咻咻猫耷拉着耳朵，仍旧用巧克力色背部对着你]\n（💡提示：看样子还要戳 ${state.ignoreCount} 次哦！）`;
                             emoji = "💢";
                         }
                     } else {
-                        play8BitSound('ignore');
                         reply = "哎呀！[揉了揉眼睛，抖了抖红粉色耳心瞪你] 别乱戳！再戳咻咻可要生气不理你了！";
                         
                         emoji = "❔";
@@ -1128,7 +982,6 @@
                     if (container) container.classList.add('tsundere-ignore');
                     
                     setTimeout(() => {
-                        play8BitSound('ignore');
                         updateUI("哼！[咻咻猫傲娇地转过身去，背对你端坐在粉色地板上] 咻咻决定不理你了！\n（💡提示：点击【👉 戳一戳】好好哄哄它吧！）", "💢");
                         resolve();
                     }, 500);
@@ -1147,8 +1000,6 @@
             
             const text = inputEl.value.trim();
             if (!text) return;
-
-            play8BitSound('click');
 
             const cleanKey = getStrictCleanKey();
             const isDefaultOrInvalid = !cleanKey || 
